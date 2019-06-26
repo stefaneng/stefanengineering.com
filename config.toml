@@ -2,8 +2,8 @@ baseurl = "/"
 languageCode = "en-us"
 title = "Stefan Eng's blog"
 theme = "hugo-lithium"
-googleAnalytics = ""
-disqusShortname = ""
+googleAnalytics = "UA-45937616-1"
+disqusShortname = "stefaneng"
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 [permalinks]

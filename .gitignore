@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 public/
+themes/hugo-lithium/archetypes/*.html

@@ -4,3 +4,5 @@
 .Ruserdata
 public/
 themes/hugo-lithium/archetypes/*.html
+*.tex
+*.log

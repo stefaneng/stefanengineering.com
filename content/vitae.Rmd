@@ -48,8 +48,6 @@ timeline <- read.csv("vitae_data/timeline.csv", stringsAsFactors = FALSE) %>%
 
 Last updated: `r today()`.
 
-<div class="mobile-hide">
-
 ## Timeline
 ```{r timeline}
 rect_size <- .9
@@ -89,8 +87,6 @@ ggplot(timeline) +
   ) +
   labs(fill = element_blank())
 ```
-
-</div>
 
 <!-- Include the actual body of resume -->
 ```{r child = 'vitae_body.Rmd'}

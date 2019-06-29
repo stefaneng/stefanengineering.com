@@ -1,17 +1,104 @@
 ---
-title: Stefan Eng
+title: "Stefan Eng"
+output:
+  html_document:
+    df_print: paged
+disable_comments: yes
 ---
 
 ```{r, include=FALSE, echo=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
-knitr::opts_knit$set(global.par = TRUE)
+library(lubridate)
+library(scales)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+opts_knit$set(global.par = TRUE)
+
+# Allow duplicate labels
+options(knitr.duplicate.label = 'allow')
+
+# Today's date
+td <- today()
 
 cbPalette <- c(
   "#999999", "#E69F00", "#56B4E9", "#009E73",
   "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-ggplot2::theme_set(ggplot2::theme_minimal())
+theme_set(theme_minimal())
+
+resume_filename <- paste0("vitae_download/stefan_eng_resume_", td, ".pdf")
+resume_path <- paste0("/", resume_filename)
+
+timeline <- read.csv("vitae_data/timeline.csv", stringsAsFactors = FALSE) %>% 
+  tibble::rownames_to_column() %>%
+  mutate(rowname = as.numeric(rowname),
+         start_date = date(start_date),
+         end_date = date(end_date),
+         # So we can treat expected dates differently
+         today_or_end = as_date(
+           unlist(lapply(end_date, min, td))
+         ),
+         midpoint = start_date + ((end_date - start_date) / 2),
+         # Add newline in
+         institution = gsub(" ", "\n", institution),
+         type = as.factor(type),
+         is_past = end_date < td)
 ```
 
-## Novartis (June 2019 - Current)
-  - Internship in the Scientific Computing and Consulting (SCC) group within Biostatistics at Novartis in Basel, Switzerland.
+Last updated: `r today()`.
+
+<div class="mobile-hide">
+
+## Timeline
+```{r timeline}
+rect_size <- .9
+ggplot(timeline) +
+  # Past
+  geom_rect(aes(
+    xmin = start_date,
+    xmax = today_or_end,
+    ymin = rowname - rect_size / 2,
+    ymax = rowname + rect_size / 2,
+    fill = type)) +
+  # Planned
+  geom_rect(aes(
+    xmin = today_or_end,
+    xmax = end_date,
+    ymin = rowname - rect_size / 2,
+    ymax = rowname + rect_size / 2,
+    fill = type
+  ), alpha = 0.3) +
+  geom_vline(aes(xintercept = td), alpha = .4) +
+  geom_text(aes(x = midpoint,
+                y = rowname,
+                label = as.character(institution),
+                hjust = is_past * .5
+  )) +
+  geom_label(aes(x = td, y = 1, label = "Current")) +
+  scale_x_date(labels = date_format("%Y"), date_breaks = "1 year") +
+  scale_y_discrete(breaks = NULL) + #limits = timeline$institution) +
+  scale_fill_manual(values = cbPalette[-1]) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major  = element_blank(),
+    text = element_text(size = 16, family = "Helvetica"),
+    legend.position = c(.1,0.9),
+    legend.margin = margin(6, 6, 6, 6)
+  ) +
+  labs(fill = element_blank())
+```
+
+</div>
+
+<!-- Include the actual body of resume -->
+```{r child = 'vitae_body.Rmd'}
+```
+
+[Download here](`r resume_path`)
+
+<!-- Save resume to /vitae_body/stefan_eng_resume_<today's date>.pdf -->
+```{r, include=FALSE, echo=FALSE, results=FALSE}
+rmarkdown::render("vitae_body.Rmd", output_format = "pdf_document", output_file = resume_filename)
+```

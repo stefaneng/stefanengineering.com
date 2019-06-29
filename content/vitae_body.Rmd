@@ -1,0 +1,58 @@
+---
+title: Stefan Eng
+---
+
+```{r, include=FALSE, echo=FALSE}
+library(knitcitations)
+
+bib <- c(
+  'cresst_eng2018' = "10.1109/ICSC.2018.00047"
+)
+
+cleanbib()
+cite_options(hyperlink = 'to.doc', citation_format = 'text', style = 'html')
+# Silently cite
+citep(bib["cresst_eng2018"])
+```
+
+## Education
+  - Currently in [Master’s Programme in Mathematical Sciences](https://www.chalmers.se/en/departments/math/education/university-of-gothenburg/programmes/mathematical-sciences/Pages/default.aspx) (Statistics) at Gothenburg University/Chalmers.
+  -  Bachelor of Science in Mathematics & Computer Science at California State University, Northridge
+
+## Work Experience
+
+### Scientific Computing @ [Novartis](https://www.novartis.com/)
+*June 2019 - Current*
+
+  - Internship in the Scientific Computing and Consulting (SCC) group within Biostatistics at Novartis in Basel, Switzerland.
+  - Building R Shiny web applications for interactive data visualization and exploration of clinical trial data.
+  
+### Programmer/Analyst @ [CRESST/UCLA](http://cresst.org) 
+*August 2016 - June 2018*
+
+  - Worked on research projects involving natural language processing (NLP)
+    -  Presented results at IEEE Conference on Semantic Computing `r citet(bib['cresst_eng2018'])`
+  - Created an interactive game using Angular2/Ionic to test and measure reasoning and problem
+solving where students attempted to solve tasks by programming an on-screen vehicle.
+    - Conducted multiple data collections at high schools across Los Angeles where around one hundred
+students were involved in the data collection.
+    - Event data was analyzed and exploratory analysis was conducted to summarize student’s problem
+solving and reasoning abilities.
+
+
+### Data Scientist/Software Developer @ [JPL](https://www.jpl.nasa.gov)
+*June 2013 - May 2016*
+
+  - Managed data processing pipeline for Cassini and Dawn missions which includes Scala/Apache
+Spark ingest code and managing Elasticsearch cluster.
+  - Wrote parsers to bring old proprietary data formats into common and modern formats. Including
+XML parsing, web scraping, and Scala’s parser combinators.
+  - Lead a project to extract data, using Apache Tika, from word documents into MongoDB and
+presented with a web interface.
+  
+## Publications
+
+```{r bibliography, results = 'asis', echo = FALSE, cache = FALSE, warning = FALSE}
+## Print bibliography
+bibliography(style = 'html')
+```

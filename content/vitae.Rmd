@@ -48,6 +48,8 @@ timeline <- read.csv("vitae_data/timeline.csv", stringsAsFactors = FALSE) %>%
 
 Last updated: `r today()`.
 
+<div class="mobile-hide">
+
 ## Timeline
 ```{r timeline}
 rect_size <- .9
@@ -88,6 +90,8 @@ ggplot(timeline) +
   labs(fill = element_blank())
 ```
 
+</div>
+
 <!-- Include the actual body of resume -->
 ```{r child = 'vitae_body.Rmd'}
 ```
@@ -96,6 +100,5 @@ ggplot(timeline) +
 
 <!-- Save resume to /vitae_body/stefan_eng_resume_<today's date>.pdf -->
 ```{r, include=FALSE, echo=FALSE, results=FALSE}
-# TODO: Do this directly with knit2pdf so we don't have annoying blank pdf output
 rmarkdown::render("vitae_body.Rmd", output_format = "pdf_document", output_file = resume_filename)
 ```

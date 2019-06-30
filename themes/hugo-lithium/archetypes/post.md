@@ -13,6 +13,11 @@ output:
 
 
 ```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library('knitcitations') # for citations
+library('sessioninfo') # for session_info()
+library('ggplot2')
+
 ## For R images to display well in the RSS feed (disable for local preview)
 # knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
 
@@ -26,11 +31,7 @@ cbPalette <- c(
   "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 # My favorite theme
-ggplot2::theme_set(ggplot2::theme_minimal())
-
-## Load frequently used packages for blog posts
-library('knitcitations') # for citations
-library('sessioninfo') # for session_info()
+theme_set(ggplot2::theme_minimal())
 
 ## Load knitcitations with a clean bibliography
 cleanbib()

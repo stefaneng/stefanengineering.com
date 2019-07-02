@@ -16,7 +16,7 @@ citep(bib["cresst_eng2018"])
 ```
 
 ## Education
-  - Currently in [Master’s Programme in Mathematical Sciences](https://www.chalmers.se/en/departments/math/education/university-of-gothenburg/programmes/mathematical-sciences/Pages/default.aspx) (Statistics) at Gothenburg University/Chalmers.
+  - *Current*: [Master’s Programme in Mathematical Sciences](https://www.chalmers.se/en/departments/math/education/university-of-gothenburg/programmes/mathematical-sciences/Pages/default.aspx) (Statistics) at Gothenburg University/Chalmers.
   -  Bachelor of Science in Mathematics & Computer Science at California State University, Northridge
 
 ## Work Experience

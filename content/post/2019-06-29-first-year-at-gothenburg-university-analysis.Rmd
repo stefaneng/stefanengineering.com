@@ -81,7 +81,7 @@ as well as a choices between the three courses
 As a part of the mathematical science program, I was required to a take a course on perspectives in mathematics (history).
 
 After completing my first year I wanted to review how the program is going so far as well as my goals for next year.
-I recorded the amount of time I spent outside of my courses using toggle `r  citep(bib[['toggl']])`.
+I recorded the amount of time I spent outside of my courses using [toggl](https://toggl.com).
 
 ## Time Tracking Analysis
 

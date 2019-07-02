@@ -27,7 +27,7 @@ cbPalette <- c(
 
 theme_set(theme_minimal())
 
-resume_filename <- paste0("vitae_download/stefan_eng_resume_", td, ".pdf")
+resume_filename <- "vitae_download/stefan_eng_resume.pdf"
 resume_path <- paste0("/", resume_filename)
 
 timeline <- read.csv("vitae_data/timeline.csv", stringsAsFactors = FALSE) %>% 
@@ -94,7 +94,8 @@ ggplot(timeline) +
 
 [Download here](`r resume_path`)
 
-<!-- Save resume to /vitae_body/stefan_eng_resume_<today's date>.pdf -->
+<!-- Save resume to /vitae_body/stefan_eng_resume.pdf -->
 ```{r, include=FALSE, echo=FALSE, results=FALSE}
-rmarkdown::render("vitae_body.Rmd", output_format = "pdf_document", output_file = resume_filename)
+# Unintuitive but adding quiet = TRUE will not produce the preview
+rmarkdown::render("vitae_body.Rmd", output_format = "pdf_document", output_file = resume_filename, quiet = TRUE)
 ```

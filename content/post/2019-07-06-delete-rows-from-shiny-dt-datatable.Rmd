@@ -147,7 +147,7 @@ Check it out in the code below.
 
 ## Final Code
 
-<script src="http://gist-it.appspot.com/https://github.com/stefaneng/Shiny-DeleteRowsDT/blob/master/app.R"></script>
+<script src="https://gist-it.appspot.com/https://github.com/stefaneng/Shiny-DeleteRowsDT/blob/master/app.R"></script>
 
 ### References
 

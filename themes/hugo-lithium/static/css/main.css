@@ -319,18 +319,3 @@ code {
     box-shadow: none;
   }
 }
-
-/* My added CSS */
-
-/* Hide things if we are on mobile devices */
-@media screen and (min-width: 0px) and (max-width: 720px) {
-  .mobile-hide {
-    display: none;
-  }
-}
-
-@media screen and (min-width: 0px) and (max-width: 720px) {
-  img {
-    width:100%;
-  }
-}

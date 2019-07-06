@@ -1,0 +1,230 @@
+---
+title: Delete rows from Shiny DT::datatable
+author: Stefan Eng
+date: '2019-07-06'
+slug: delete-rows-from-shiny-dt-datatable
+categories:
+  - development
+tags:
+  - R
+  - shiny
+  - DT::datatable
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library('knitcitations') # for citations
+library(shiny)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(warning = FALSE, comment = NA, message = FALSE, eval = F)
+knitr::opts_knit$set(global.par = TRUE)
+
+## Load knitcitations with a clean bibliography
+cleanbib()
+cite_options(hyperlink = 'to.doc', citation_format = 'text', style = 'html',
+             cite.style = 'numeric')
+
+bib <- list(
+    'blogdown' = citation('blogdown')[2],
+    'knitcitations' = citation('knitcitations'),
+    'setInputValue' = 'https://shiny.rstudio.com/articles/communicating-with-js.html'
+)
+```
+
+<!-- Strange bug where I need some font-awesome icon on the page or else they don't show up in the table -->
+`r icon('delete')`
+
+[Demo](https://stefaneng.shinyapps.io/DeleteRowsDT/) and [Code](https://github.com/stefaneng/Shiny-DeleteRowsDT)
+
+This is a simple shiny app that adds a delete button for each row in a data table.
+Once a row is deleted, it can be put back into the table with the undo button.
+
+The main idea is that we add a new column to the given data frame that consists of an character representation of an [`actionButton`](https://shiny.rstudio.com/reference/shiny/latest/actionButton.html).
+Each button has an id that ends with the row number.
+We take advantage of the onclick callback and use `Shiny.setInputValue` `r citep(bib[['setInputValue']])` via javascript bind our own input.
+In this simple case, we are only sending back the id of the button that we created.
+By default, `setInputValue` will not trigger a new event if the value has not change.
+This could happen if we delete a row, then undo the deletion and then try to delete the same row.
+To make sure that each click triggers the event, we add `{priority: "event"}` as an argument.
+```{js}
+Shiny.setInputValue("deletePressed", this.id, {priority: "event"})
+```
+
+Now to add the buttons to the column, we use the following function
+
+```{r, eval = T}
+#' A column of delete buttons for each row in the data frame for the first column
+#'
+#' @param df data frame
+#' @param id id prefix to add to each actionButton. The buttons will be id'd as id_INDEX.
+#' @return A DT::datatable with escaping turned off that has the delete buttons in the first column and \code{df} in the other
+deleteButtonColumn <- function(df, id, ...) {
+  # function to create one action button as string
+  f <- function(i) {
+    as.character(
+      actionButton(
+        # The id prefix with index
+        paste(id, i, sep="_"),
+        label = NULL,
+        icon = icon('trash'),
+        onclick = 'Shiny.setInputValue(\"deletePressed\", this.id, {priority: "event"})'))
+  }
+
+  deleteCol <- unlist(lapply(seq_len(nrow(df)), f))
+
+  # Return a data table
+  DT::datatable(cbind(delete = deleteCol, df),
+                # Need to disable escaping for html as string to work
+                escape = FALSE,
+                options = list(
+                  # Disable sorting for the delete column
+                  columnDefs = list(
+                    list(targets = 1, sortable = FALSE))
+                ))
+}
+```
+
+We can use it as follows:
+```{r, eval =T}
+df <- data.frame(matrix(sample(1:20, 10), ncol = 2))
+deleteButtonColumn(df, 'button')
+```
+
+Now in the server code, we have an event `input$deletePressed` that we can react to.
+The value is the id of the button that we clicked on, which will be `button_1` if we clicked on button 1.
+```{r}
+server <- function(input, output) {
+  # ...  
+  
+  observeEvent(input$deletePressed, {
+    # Handle delete pressed
+  })
+}
+```
+
+We then need to parse the index from `input$deletePressed`
+```{r}
+#' Extracts the row id number from the id string
+#' @param idstr the id string formated as id_INDEX
+#' @return INDEX from the id string id_INDEX
+parseDeleteEvent <- function(idstr) {
+  res <- as.integer(sub(".*_([0-9]+)", "\\1", idstr))
+  if (! is.na(res)) res
+}
+```
+
+Then we can delete the row by
+```{r}
+server <- function(input, output) {
+  rv <- reactiveValues(data = NULL)
+      
+  observeEvent(input$deletePressed, {
+        rowNum <- parseDeleteEvent(input$deletePressed)
+        
+        # Delete the row from the data frame
+        rv$data <- rv$data[-rowNum,]
+      })
+  
+  output$dtable <- DT::renderDataTable(
+      # Add the delete button column
+      deleteButtonColumn(rv$data, 'delete_button')
+    )
+}  
+```
+
+That's basically it! In the demo application, I implemented an undo function as well.
+Check it out in the code below.
+
+## Final Code
+
+<script src="http://gist-it.appspot.com/https://github.com/stefaneng/Shiny-DeleteRowsDT/blob/master/app.R"></script>
+
+### References
+
+```{r bibliography, results = 'asis', echo = FALSE, cache = FALSE, warning = FALSE}
+## Print bibliography
+bibliography(style = 'html')
+```
+
+### Reproducibility
+
+### Session info
+
+```
+ setting  value                       
+ version  R version 3.6.0 (2019-04-26)
+ os       macOS Mojave 10.14.3        
+ system   x86_64, darwin15.6.0        
+ ui       RStudio                     
+ language (EN)                        
+ collate  en_US.UTF-8                 
+ ctype    en_US.UTF-8                 
+ tz       Europe/Stockholm            
+ date     2019-07-06     
+```
+
+### Packages
+```
+package      * version  date       lib source        
+ assertthat     0.2.1    2019-03-21 [1] CRAN (R 3.6.0)
+ backports      1.1.4    2019-04-10 [1] CRAN (R 3.6.0)
+ BH             1.69.0-1 2019-01-07 [1] CRAN (R 3.6.0)
+ cli            1.1.0    2019-03-19 [1] CRAN (R 3.6.0)
+ colorspace     1.4-1    2019-03-18 [1] CRAN (R 3.6.0)
+ crayon         1.3.4    2017-09-16 [1] CRAN (R 3.6.0)
+ crosstalk      1.0.0    2016-12-21 [1] CRAN (R 3.6.0)
+ digest         0.6.20   2019-07-04 [1] CRAN (R 3.6.0)
+ DT             0.7      2019-06-11 [1] CRAN (R 3.6.0)
+ ellipsis       0.2.0.1  2019-07-02 [1] CRAN (R 3.6.0)
+ fansi          0.4.0    2018-10-05 [1] CRAN (R 3.6.0)
+ ggplot2        3.2.0    2019-06-16 [1] CRAN (R 3.6.0)
+ glue           1.3.1    2019-03-12 [1] CRAN (R 3.6.0)
+ gtable         0.3.0    2019-03-25 [1] CRAN (R 3.6.0)
+ htmltools      0.3.6    2017-04-28 [1] CRAN (R 3.6.0)
+ htmlwidgets    1.3      2018-09-30 [1] CRAN (R 3.6.0)
+ httpuv         1.5.1    2019-04-05 [1] CRAN (R 3.6.0)
+ jsonlite       1.6      2018-12-07 [1] CRAN (R 3.6.0)
+ labeling       0.3      2014-08-23 [1] CRAN (R 3.6.0)
+ later          0.8.0    2019-02-11 [1] CRAN (R 3.6.0)
+ lattice        0.20-38  2018-11-04 [3] CRAN (R 3.6.0)
+ lazyeval       0.2.2    2019-03-15 [1] CRAN (R 3.6.0)
+ magrittr       1.5      2014-11-22 [1] CRAN (R 3.6.0)
+ MASS           7.3-51.4 2019-03-31 [3] CRAN (R 3.6.0)
+ Matrix         1.2-17   2019-03-22 [3] CRAN (R 3.6.0)
+ mgcv           1.8-28   2019-03-21 [3] CRAN (R 3.6.0)
+ mime           0.7      2019-06-11 [1] CRAN (R 3.6.0)
+ munsell        0.5.0    2018-06-12 [1] CRAN (R 3.6.0)
+ nlme           3.1-139  2019-04-09 [3] CRAN (R 3.6.0)
+ pillar         1.4.2    2019-06-29 [1] CRAN (R 3.6.0)
+ pkgconfig      2.0.2    2018-08-16 [1] CRAN (R 3.6.0)
+ plyr           1.8.4    2016-06-08 [1] CRAN (R 3.6.0)
+ promises       1.0.1    2018-04-13 [1] CRAN (R 3.6.0)
+ R6             2.4.0    2019-02-14 [1] CRAN (R 3.6.0)
+ RColorBrewer   1.1-2    2014-12-07 [1] CRAN (R 3.6.0)
+ Rcpp           1.0.1    2019-03-17 [1] CRAN (R 3.6.0)
+ reshape2       1.4.3    2017-12-11 [1] CRAN (R 3.6.0)
+ rlang          0.4.0    2019-06-25 [1] CRAN (R 3.6.0)
+ scales         1.0.0    2018-08-09 [1] CRAN (R 3.6.0)
+ shiny          1.3.2    2019-04-22 [1] CRAN (R 3.6.0)
+ sourcetools    0.1.7    2018-04-25 [1] CRAN (R 3.6.0)
+ stringi        1.4.3    2019-03-12 [1] CRAN (R 3.6.0)
+ stringr        1.4.0    2019-02-10 [1] CRAN (R 3.6.0)
+ tibble         2.1.3    2019-06-06 [1] CRAN (R 3.6.0)
+ utf8           1.1.4    2018-05-24 [1] CRAN (R 3.6.0)
+ vctrs          0.2.0    2019-07-05 [1] CRAN (R 3.6.0)
+ viridisLite    0.3.0    2018-02-01 [1] CRAN (R 3.6.0)
+ withr          2.1.2    2018-03-15 [1] CRAN (R 3.6.0)
+ xtable         1.8-4    2019-04-21 [1] CRAN (R 3.6.0)
+ yaml           2.2.0    2018-07-25 [1] CRAN (R 3.6.0)
+ zeallot        0.1.0    2018-01-28 [1] CRAN (R 3.6.0)
+```

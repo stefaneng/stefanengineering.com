@@ -1,0 +1,19 @@
+/* Hide things if we are on mobile devices */
+@media screen and (min-width: 0px) and (max-width: 720px) {
+  .mobile-hide {
+    display: none;
+  }
+
+  /* Hide iframes if on mobile */
+  iframe {
+    width:0;
+    height:0;
+    border:0;
+    border:none;
+    display: none;
+  }
+
+  img {
+    width:100%;
+  }
+}

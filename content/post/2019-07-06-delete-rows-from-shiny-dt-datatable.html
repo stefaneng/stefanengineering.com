@@ -5,6 +5,7 @@ date: '2019-07-06'
 slug: delete-rows-from-shiny-dt-datatable
 categories:
   - development
+  - R
 tags:
   - R
   - shiny
@@ -76,7 +77,7 @@ deleteButtonColumn &lt;- function(df, id, ...) {
 <pre class="r"><code>df &lt;- data.frame(matrix(sample(1:20, 10), ncol = 2))
 deleteButtonColumn(df, &#39;button&#39;)</code></pre>
 <div id="htmlwidget-1" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1">{"x":{"filter":"none","data":[["1","2","3","4","5"],["<button id=\"button_1\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_2\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_3\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_4\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_5\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>"],[4,8,12,6,2],[7,5,13,1,15]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>delete<\/th>\n      <th>X1<\/th>\n      <th>X2<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"targets":1,"sortable":false},{"className":"dt-right","targets":[2,3]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"filter":"none","data":[["1","2","3","4","5"],["<button id=\"button_1\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_2\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_3\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_4\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_5\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>"],[20,17,11,6,19],[10,13,3,12,16]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>delete<\/th>\n      <th>X1<\/th>\n      <th>X2<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"targets":1,"sortable":false},{"className":"dt-right","targets":[2,3]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 <p>Now in the server code, we have an event <code>input$deletePressed</code> that we can react to.
 The value is the id of the button that we clicked on, which will be <code>button_1</code> if we clicked on button 1.</p>
 <pre class="r"><code>server &lt;- function(input, output) {
@@ -117,6 +118,15 @@ Check it out in the code below.</p>
 <script src="https://gist-it.appspot.com/https://github.com/stefaneng/Shiny-DeleteRowsDT/blob/master/app.R"></script>
 <div id="references" class="section level3">
 <h3>References</h3>
+<p>
+<a id='bib-Unknown_2019'></a><a href="#cite-Unknown_2019">[1]</a><cite>
+Unknown.
+<em>Unknown</em>.
+<a href="https://shiny.rstudio.com/articles/communicating-with-js.html">https://shiny.rstudio.com/articles/communicating-with-js.html</a>.
+Accessed 2019-07-07.
+2019.
+URL: <a href="https://shiny.rstudio.com/articles/communicating-with-js.html">https://shiny.rstudio.com/articles/communicating-with-js.html</a>.</cite>
+</p>
 </div>
 <div id="reproducibility" class="section level3">
 <h3>Reproducibility</h3>

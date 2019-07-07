@@ -5,6 +5,7 @@ date: '2019-07-06'
 slug: delete-rows-from-shiny-dt-datatable
 categories:
   - development
+  - R
 tags:
   - R
   - shiny
@@ -151,7 +152,7 @@ Check it out in the code below.
 
 ### References
 
-```{r bibliography, results = 'asis', echo = FALSE, cache = FALSE, warning = FALSE}
+```{r bibliography, results = 'asis', echo = FALSE, cache = FALSE, warning = FALSE, eval = T}
 ## Print bibliography
 bibliography(style = 'html')
 ```

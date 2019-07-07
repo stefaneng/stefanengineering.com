@@ -1,5 +1,5 @@
 ---
-title: Delete rows from Shiny DT::datatable
+title: Delete rows from R Shiny DT::datatable
 author: Stefan Eng
 date: '2019-07-06'
 slug: delete-rows-from-shiny-dt-datatable
@@ -52,7 +52,7 @@ Once a row is deleted, it can be put back into the table with the undo button.
 
 The main idea is that we add a new column to the given data frame that consists of an character representation of an [`actionButton`](https://shiny.rstudio.com/reference/shiny/latest/actionButton.html).
 Each button has an id that ends with the row number.
-We take advantage of the onclick callback and use `Shiny.setInputValue` `r citep(bib[['setInputValue']])` via javascript bind our own input.
+We take advantage of the onclick callback and use `Shiny.setInputValue` `r citep(bib[['setInputValue']])` via javascript to bind our own input.
 In this simple case, we are only sending back the id of the button that we created.
 By default, `setInputValue` will not trigger a new event if the value has not change.
 This could happen if we delete a row, then undo the deletion and then try to delete the same row.

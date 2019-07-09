@@ -1,5 +1,5 @@
 ---
-title: Delete rows from Shiny DT::datatable
+title: Delete rows from R Shiny DT::datatable
 author: Stefan Eng
 date: '2019-07-06'
 slug: delete-rows-from-shiny-dt-datatable
@@ -37,7 +37,7 @@ output:
 Once a row is deleted, it can be put back into the table with the undo button.</p>
 <p>The main idea is that we add a new column to the given data frame that consists of an character representation of an <a href="https://shiny.rstudio.com/reference/shiny/latest/actionButton.html"><code>actionButton</code></a>.
 Each button has an id that ends with the row number.
-We take advantage of the onclick callback and use <code>Shiny.setInputValue</code> <a id='cite-Unknown_2019'></a>[<a href='https://shiny.rstudio.com/articles/communicating-with-js.html'>1</a>] via javascript bind our own input.
+We take advantage of the onclick callback and use <code>Shiny.setInputValue</code> <a id='cite-Unknown_2019'></a>[<a href='https://shiny.rstudio.com/articles/communicating-with-js.html'>1</a>] via javascript to bind our own input.
 In this simple case, we are only sending back the id of the button that we created.
 By default, <code>setInputValue</code> will not trigger a new event if the value has not change.
 This could happen if we delete a row, then undo the deletion and then try to delete the same row.
@@ -77,7 +77,7 @@ deleteButtonColumn &lt;- function(df, id, ...) {
 <pre class="r"><code>df &lt;- data.frame(matrix(sample(1:20, 10), ncol = 2))
 deleteButtonColumn(df, &#39;button&#39;)</code></pre>
 <div id="htmlwidget-1" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1">{"x":{"filter":"none","data":[["1","2","3","4","5"],["<button id=\"button_1\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_2\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_3\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_4\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_5\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>"],[20,17,11,6,19],[10,13,3,12,16]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>delete<\/th>\n      <th>X1<\/th>\n      <th>X2<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"targets":1,"sortable":false},{"className":"dt-right","targets":[2,3]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"filter":"none","data":[["1","2","3","4","5"],["<button id=\"button_1\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_2\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_3\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_4\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>","<button id=\"button_5\" type=\"button\" class=\"btn btn-default action-button\" onclick=\"Shiny.setInputValue(&quot;deletePressed&quot;, this.id, {priority: &quot;event&quot;})\">\n  <i class=\"fa fa-trash\"><\/i>\n<\/button>"],[17,3,20,16,13],[2,1,8,5,4]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>delete<\/th>\n      <th>X1<\/th>\n      <th>X2<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"targets":1,"sortable":false},{"className":"dt-right","targets":[2,3]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 <p>Now in the server code, we have an event <code>input$deletePressed</code> that we can react to.
 The value is the id of the button that we clicked on, which will be <code>button_1</code> if we clicked on button 1.</p>
 <pre class="r"><code>server &lt;- function(input, output) {
@@ -123,7 +123,7 @@ Check it out in the code below.</p>
 Unknown.
 <em>Unknown</em>.
 <a href="https://shiny.rstudio.com/articles/communicating-with-js.html">https://shiny.rstudio.com/articles/communicating-with-js.html</a>.
-Accessed 2019-07-07.
+Accessed 2019-07-09.
 2019.
 URL: <a href="https://shiny.rstudio.com/articles/communicating-with-js.html">https://shiny.rstudio.com/articles/communicating-with-js.html</a>.</cite>
 </p>

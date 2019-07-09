@@ -1,0 +1,554 @@
+---
+title: 1990 to 1992 Census Crime Rate Prediction.
+author: Stefan Eng
+date: '2019-02-08'
+slug: 1990-1992-census-crime-prediction
+categories:
+  - R
+  - school
+  - project
+tags:
+  - R
+  - analysis
+  - regression
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: true    
+bibliography: ../../static/bibtex/crime_rate_chalmers.bib
+csl: ../../static/bibtex/acm-sig-proceedings.csl     
+---
+
+
+```{r setup, include=FALSE, echo=FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE, warning = FALSE)
+opts_knit$set(global.par = TRUE)
+opts_chunk$set(comment = NA)
+library(tidyr)
+library(dplyr)
+library(Hmisc)
+library(reshape2)
+library(corrplot)
+library(MASS)
+library(AER)
+# Global ggplot options
+library(ggplot2)
+library(kableExtra)
+#theme_set(theme_minimal(base_size = 22))
+theme_set(theme_minimal())
+```
+
+```{r}
+set.seed(1313)
+data <- read.table('../../static/data/crime_rate_data18.txt')
+colnames(data)<-c("id","county","state","area","popul","pop1834","pop65plus","phys","beds","crimes","higrads","bachelors","poors","unemployed","percapitaincome","totalincome","region")
+# Data transformations
+data$crm1000 <- 1000 * data$crimes / data$popul
+data$percapitabeds <- data$beds / data$popul
+data$percapitaphys <- data$phys / data$popul
+data$percapitaarea <- data$area / data$popul
+#data$areaperyoung <- data$area / (data$popul * data$pop1834)
+data$region <- factor(data$region, labels = c("northeast", "midwest", "south", "west"))
+data$region <- relevel(data$region, "west")
+n <- nrow(data)
+shuffled_data <- data[sample(n), ]
+train_indices <- 1:round(0.8 * n)
+train <- shuffled_data[train_indices, ]
+# val_indices <- (round(0.7 * n) + 1):(round(0.85 * n))
+# validation <- shuffled_data[val_indices, ]
+test_indices <- (round(0.8 * n) + 1):n
+test <- shuffled_data[test_indices, ]
+```
+
+## Introduction
+
+We are considering a dataset that provides some demographic information for 440 of the most populous counties in the United States in years 1990-92. Each line of the dataset provides information on 14 variables for a single county. Counties with missing data were deleted from the dataset. We are building models to predict the number of crimes per 1000 people in each county. We first explore linear regression models and then a negative binomial regression model. We found that the best linear regression model performed similarly to the negative binomial regression model on the training and test set using the same variables.
+
+## Goals
+  The goals of the analysis was the find a model that is simple yet explains as much as possible. The model should make sense first and foremost. Automatic methods such as the backwards step algorithm were used as auxiliary methods to supplement a more hand selected model. We decided against using all possible subsets selection as a matter of principle as it can lead to models that lack explainability. We explore interactions between variables as well as standard additive models. Once model selection is done based on the training set the final results are reported against the test set (20% of the dataset). The test set was not looked at or used in the model building process. The models were compared on the training set using 10-fold cross validation and leave one out cross validation (LOOCV).
+
+## Data Processing
+  Some additional variables were created. The variables "beds", "phys", and "area" were all divided by the population to give a per capita total number of hospital beds, cribs and bassinets, per capita number of physicians practicing, and the per capita area. We then remove the total quantities from the data set. We found that working with per capita was more informative than the direct quantities. The data was also transformed almost entirely with natural log transform as it performed better for our model. We arrived at natural log based on the plots, residuals plots, and looking how the model's $R^2$ changed with regard to the transformations along with cross validation. The data summary can be found in the appendix.
+
+## Models
+```{r}
+full_formula <- crm1000 ~ percapitaarea + popul + pop1834 + pop65plus + percapitaphys + percapitabeds + higrads + bachelors + poors + unemployed + percapitaincome + region
+log_formula <- crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + region
+inter_formula <- crm1000 ~ log(percapitaarea) + log(popul) + 
+    log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + 
+    region + log(popul):region + log(percapitaincome):region
+inter_full_formula <- crm1000 ~ log(percapitaarea) + log(popul) + 
+    log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + 
+    region + log(popul):log(percapitabeds) + log(popul):log(poors) + 
+    log(popul):log(percapitaincome) + log(popul):region + 
+    log(pop1834):region + log(percapitabeds):region + log(poors):log(percapitaincome) + 
+    log(poors):region
+simple_formula <- crm1000 ~ log(poors)
+full_mt <- lm(full_formula, data = train)
+log_mt <- lm(log_formula, data = train)
+inter_mt <- lm(inter_formula, data = train)
+inter_full_mt <- lm(inter_full_formula, data = train)
+simple_mt <- lm(inter_full_formula, data = train)
+# Negative Binomial Model
+nb_m <- nb_glm <- glm.nb(crimes ~ offset(log(popul / 1000)) + log(percapitaarea) + log(popul) + log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + region, data = train)
+```
+
+### Full Model 
+```
+crm1000 ~ percapitaarea + popul + pop1834 + pop65plus +
+          percapitaphys + percapitabeds + higrads + bachelors +
+          poors + unemployed + percapitaincome + region
+```
+The full model was used as a baseline model, and subsequent models were reduced from this model.
+
+#### Base Model
+```
+crm1000 ~ percapitaarea + popul + pop1834 +
+          percapitabeds + poors + percapitaincome + region
+```
+These are the variables from which all the other models are based. We arrived at this model by keeping one variable from each correlation cluster that seemed to make the most intuitive sense to keep. We confirmed that this was a good model by starting with all of the variables and using backward selection to arrive at the identicial model that we had selected by hand. Then a partial F-test was performed, see table below. The F statistic was extremely small, which means that the residual sum of squares was almost the same after dropping the variables `pop65plus`, `percapitaphys`, `higrads`, `bachelors`, and `unemployed`. From this reduced model, we built up variations that involved transformations and interactions.
+
+```{r}
+sub_mt <- lm(crm1000 ~ percapitaarea + popul + pop1834 +
+          percapitabeds + poors + percapitaincome + region, data = train)
+kable(anova(sub_mt, full_mt), digits = 3, caption = "Partial F-Test for Full model vs final model (without transformations)") %>%
+  kable_styling()
+```
+
+### (Final Model) Log Transformed model with no interactions 
+This model ended up being our final model selection. The transformation were found through cross validation and analysis of the plots of the data.
+```
+crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) +
+          log(percapitabeds) + log(poors) + log(percapitaincome) + region
+```
+
+### Transformations and Interactions with only region. 
+We included all interactions between the continuous variables and the region. We then backward selected that reduced to (log) population and (log) per capita income against the region. While running the backwards selection we checked that the main effects were not dropped while the interactions were kept.
+```
+crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) +
+          log(percapitabeds) + log(poors) + log(percapitaincome) +
+          region + log(popul):region + log(percapitaincome):region
+```
+
+### Transformations and Interactions against all variables. 
+We included the interactions between all variables (including continuous-continuous) then backward selected.
+Both of the interactions models included `log(popul):region`
+but the larger interaction model did not include `log(percapitaincome):region`. We suspect this may be from the correlation between per capita income and some of the other variables that are included such as the percentage of poor people.
+```
+crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) +
+          log(percapitabeds) + log(poors) + log(percapitaincome) +
+          region + log(popul):log(percapitabeds) +
+          log(popul):log(poors) + log(popul):log(percapitaincome) +
+          log(popul):region + log(pop1834):region +
+          log(percapitabeds):region + log(poors):log(percapitaincome) +
+          log(poors):region
+```
+
+### Negative Binomial Generalized Linear Model
+We used the same variables from the log transformed model with no interactions. Instead of modeling crime rate per 1000 people directly we model the crimes. We use an offset to adjust the parameters according to the population (more is described in Negative Binomial Model section).
+```
+crimes ~ offset(log(popul / 1000)) + log(percapitaarea) +
+         log(popul) + log(pop1834) + log(percapitabeds) +
+         log(poors) + log(percapitaincome) + region
+```
+
+### Other models
+For our cross-validation and model selection we included two models which we did not intend to use but only for comparision purposes. They were the full model which was described above. Also, we included a model which we call the _simple model_ which only included the natural log of the percentage of poor people in the county.
+
+## Multicollinearity
+In this dataset there are many variables that are highly correlated (see appendix for correlation plot). We found that the percentage of poor people in a county was highly correlated with the per capita income and the number of high school grads. If we include all of the variables with high multicollinearity the standard errors will be increased and some of the variables may not end up being significant. We used the Variance inflation factor (VIF) to measure the multicollinearity in our model. The VIF gives us
+a measure of how much the coefficient's variance will increase due to
+collinearity between the other variables [@isl]. The VIF factors are the computed by regressing all the other explanatory variables on a single variable $x_i$. For each variable $i$, we calculate the VIF by performing $i$ regressions using all other variables to predict $x_i$.
+$$
+x_i = \beta_0 + \beta_1 x_1 + \cdots + \beta_{i - 1} x_{i - 1} + \beta_{i + 1} x_{i + 1} + \cdots \beta_{p-1} x_{p-1}
+$$
+Then the VIF factor is equal to 
+$$
+VIF_i = \frac{1}{1 - R_i^2}
+$$
+Where $R_i^2$ is the $R^2$ when using all other variables in a regression on variable $i$. [@wiki:vif]
+We removed the variables for per capita income, the number of high school graduates, and the number of bachelor degree graduates based on the VIF results. The last column in the table shows how much the standard error of the variable is increased due to the collinearity. For example, for the bachelors variable the value of 2.834 means that the standard error for $\beta_{bachelors}$ is 2.834 larger than if the variables were not correlated with each other.
+
+```{r}
+library(car)
+v <- vif(full_mt)
+kable(col.names = c("VIF", "DF", "VIF^(1/(2*Df))"), v[order(v[,1], decreasing = T),], digits = 3) %>%
+  kable_styling()
+```
+
+## Outliers
+When looking at the training data we noticed one outlier with respect to the target variable in the training dataset (Kings County in New York). It has a crime rate of approximately 296 per 1000 people. The median for the training set was a crime rate of 53.55 per 1000 people. In the training set we found that Kings County has larger leverage and also has high influence. There are also outliers with respect to the other variables but the amount is reduced when we took the log transform of the data. In the appendix, we go into more detailed look at other outliers based on the studentized residuals and influence.
+
+## Interactions
+  We explored and built models that included interactions between the variables. We found that while some of the interactions were significant, when doing cross validation the additive model without any interactions performed the best. Using the partial F-test, we compared the two interaction models with the additive model. For the interactions model with only region, we did not reject the null hypothesis at the $\alpha = 0.05$ level, as the p-value was 0.06. The value was close enough that we decided to continue to compare with this model as well. The results can be see in the table below. When we run a partial F-test on the interaction models with more interactions, we get a larger test statistic that allows us to reject the null hypothesis at the $\alpha = 0.05$ level.
+
+```{r}
+kable(anova(log_mt, inter_mt), caption = "Partial F-test for region interactions model", digits = 3) %>%
+  kable_styling()
+```
+
+```{r}
+kable(anova(log_mt, inter_full_mt), caption = "Partial F-test for full interactions model", digits = 6) %>%
+  kable_styling()
+```
+  
+In the conditional plot we can see the values of the log of population vs the crime rate for each of the regions. The bottom left panel is the West, bottom right is the northeast, top left is the midwest and top right is the south. There seems to be a slightly smaller slope in the West panel, but overall it is not clear that the interactions are needed.
+
+```{r}  
+coplot(crm1000 ~ log(popul)|region, data = train)
+```
+  
+  Our original cross validation was performed on data that was not centered (mean subtracted off). Centering can improve the standard errors and thus the p-values of the estimates but the predictions for the new values are the same. Since our final model does not include the interactions, we decided against centering the data.
+When building the interaction models we included all of the interactions (for region and then for all variables) and then backward selected. We did this twice: once with the data centered and once without the data being centered. While this does not make a difference for the estimate, the standard errors decrease in the centered model. That made the backwards selection algorithm stop earlier when we centered the data, and thus included more of the interaction variables. Again, at this point we checked to make sure that no interaction effects were included when a main effect was dropped. When including these centered models in our cross validation we found that they performed worse than the backward selection models on the original (non-standardized) data so we chose not to include them in our analysis.
+
+## Model Interpretation
+```{r}
+log_formula <- crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + region
+log_mt <- lm(log_formula, data = train)
+sm <- summary(log_mt)
+```
+On the training data, we had an $R^2$ of `r round(sm$r.squared, 3)` which means that 54.3% of the error is explained by our model. The $R_{adj}^2$ was `r round(sm$adj.r.squared, 3)`.
+
+```{r}
+kable(summary(log_mt)$coeff[,c(1,2,4)], digits = 3)
+```
+
+Let's look at what these estimates actually mean. Since we are working on a log scale we can interpret the estimate $\beta_{area}$ for log(percapitaarea) as the change in crime rate per 1000, $crm_{1000}$, when $log(percapitaarea)$ increases by 1. That is, $\ln x_{area} + 1 = \ln(e \cdot x_{area})$. So if $x_{area}$ is _multiplied_ by $e \approx 2.718$, then $crm_{1000}$ increases by $\beta_{area}$. It can be easier to interpret if we look at percentage increase instead of multiplying by $e$. If the per captia area increases by 10%, then the crime rate per 1000 people will _decrease_ by 0.49. $\beta_{area} \cdot ln(1.10) = -5.127 \cdot ln(1.10) = -0.49$. This is summarized in the table
+
+```{r}
+num_coeff <- summary(log_mt)$coeff[2:7,"Estimate"]
+inc_amt <- cbind(num_coeff * log(1.05), num_coeff * log(1.10), num_coeff * log(1.20), num_coeff * log(1.30))
+colnames(inc_amt) <- c("5%", "10%", "20%", "30%")
+rownames(inc_amt) <- c("percapitaarea", "popul", "pop1834", "percapitabeds", "poors", "percapitaincome")
+kable(inc_amt, digits = 3, caption = "Change in crime rate by percentage increase")
+```
+
+From this table we can see that if the the percentage of poor people increased from 20 to 22, we would expect to see an increase of 2.428 in the number of crimes per 1000 people.
+We can also see that if the per captia area increases from $5 \times 10^{-3}$ to $5.5 \times 10^{-3}$ we would expect the number of crimes per 1000 people to _drop_ by 0.489.
+
+### Region
+We used "West" as our reference category so all the parameter estimates are in relation to the west region. We can interpret the estimate $\beta_{region_{NE}} = -18.548$ as the estimate change in crimes per 1000 people between the west and the north east. That is, holding all else constant, the north-east region is estimated to have $18.548$ less crimes per 1000 people. Both the north-east and the midwest are statistically significant at the $\alpha = 0.05$ level. The difference between the south and the west's rate of crimes is not statistically significant. That means that the there is not enough evidence from the data to show there is a difference in crime rates between the south and the west (assuming all else is held constant).
+
+## Negative Binomial Model
+We also explored generalized linear models for predicting the crime rate. Since we are dealing with the rate $1000 * crimes/popul$, we can formulate our model as
+
+$$
+log(crimes) = log(popul/1000) + X\beta
+$$
+
+Since we are using the (log) population in our model, having an offset is equivalent to the value of the coefficient for log(population) will increased by 1, and the intercept decreased by log(1000). We first tested a Poisson regression which assumed that the variance and expected value are the same for the crimes. When performing a dispersion test at $\alpha = 0.05$, we rejected the null that dispersion is equal to one. (Estimated dispersion was 2622.163). When dispersion is greater than one, we say that the data is overdispersed. The negative binomial model works better in the presence of overdispersion.
+  
+### Interpreting Results
+
+```{r}
+nb_glm <- glm.nb(crimes ~ offset(log(popul / 1000)) + log(percapitaarea) + log(popul) + log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + region, data = train)
+sm_nb <- summary(nb_glm)
+nb_res <- cbind(Estimate = sm_nb$coeff[,"Estimate"],
+                # "exp(Estimate)" = exp(sm_nb$coeff[,"Estimate"]),
+                "p-value" = sm_nb$coeff[,"Pr(>|z|)"])
+# Create a data frame with the means to see how predictions change
+mean_vars <- as.data.frame(t(colMeans(train[, c("percapitaarea", "popul", "pop1834", "percapitabeds", "poors", "percapitaincome")])))
+mean_vars$region = c("west")
+# Hold everything else constant while only varying the poor percentage
+# Range from ~ min to ~ max
+# summary(train$poors)
+poor_range <- seq(1, 37, by = 1)
+poor_range_df <- mean_vars[rep(1, length(poor_range)), ]
+poor_range_df$poors <- poor_range
+poor_range_df$pred_crm1000 <- 1000 * predict(nb_glm, poor_range_df, type="response") / poor_range_df$popul
+kable(nb_res, digits = 3) %>%
+  kable_styling()
+```
+
+We can interpret the results from negative binomial similarly to Poisson regression [@agresti:categorical] [@mit_statistics_for_applications].
+Let's look at how the percentage of poor people in a county influences the number of crimes.
+We have that
+$$
+\log(crimes) = \beta_0 + \beta_{poors} \log x_{poors} + \cdots
+$$
+or
+$$
+crimes = \exp(\beta_0 + \beta_{poors} \log x_{poors}  + \cdots) = e^{\beta_0} x_{poors}^{\beta_{poors}} \cdots
+$$
+Now if we want to see what happens as $x_{poors}$ changes, say to $x_{poors}^{\prime}$, then we have that
+$$
+\frac{crimes^{\prime}}{crimes} = \left(\frac{x_{poors}^{\prime}}{x_{poors}}\right)^{\beta_{poors}}
+$$
+That is, the percentage change in the crimes is equal to the percentage change in percentage of poor people to the power of the coefficient for poors. Equivalently we pose this additively as
+$$
+\log crimes^{\prime} - \log crimes = \beta_{poors} \left( \log x_{poors}^{\prime} - \log x_{poors} \right)
+$$
+So if we kept all other variables constant, and increased $x_{poors}$ from 10 to 12 we would expect:
+$$
+\frac{crimes^{\prime}}{crimes} = \left(\frac{12}{10} \right)^{0.414} = 1.078
+$$
+That is, we would expect the crimes to increase by 7.8%. We can confirm this for the predicted crimes per 1000 people while holding all other variables at the means. When $x_{poors} = 10$, then the predicted crime rate is `r round(poor_range_df[10, "pred_crm1000"], 2)`. The predicted crime from for $x_{poors} = 12$ is `r round(poor_range_df[12, "pred_crm1000"], 2)`. The ratio of these values is `r round(poor_range_df[12, "pred_crm1000"] / poor_range_df[10, "pred_crm1000"], 3)` which is what we found from the coefficient interpretation.
+
+It is also useful to look at how the predicts change as one of the variables varies. We set all of the variables involved in the regression to the means and then only varied the percentage of poor from 1 to 37, which is approximately the range found in the training set. It is easier to see how the crime rate changes from this graph due to the poor percentage changing than just the estimated coefficients.
+```{r}
+ggplot(aes(x = poors, y = pred_crm1000), data = poor_range_df) +
+  geom_line() +
+  xlab("Poor Percentage") +
+  ylab("Predicted crimes per 1000") +
+  ggtitle("Varying the Poor Percentage vs Crimes")
+# poor_range_df[c(10,12), c("poors", "pred_crm1000")]
+```
+
+## Cross Validation
+Once we had built our models we used 10-fold cross validation to compare them against each other. We also used LOOCV which resulted in very similar results to the 10-fold cross validation. Once we had included the negative binomial model we switched to only using the 10-fold cross validation. The interactions models had a better adjusted $R^2$ value and were found with the partial F-test to have at least one parameters that should not be set to 0 (at alpha = 0.05 significance level). We included a model called "Full", which had all of the dependent variables included (without transformation) and a "simple" model which is only using the natural log of the percentage of poor people for each county.
+
+```{r}
+K <- 10
+formulas <- c(simple_formula, log_formula, inter_formula, inter_full_formula, full_formula)
+Prederrors <- as.data.frame(matrix(0,K,length(formulas) + 1))
+colnames(Prederrors) <- c("Simple", "Additive", "RegionInter", "AllInter","Full", "NB")
+shuffledTrain <- train[sample(nrow(train)),]
+folds <- cut(seq(1,nrow(shuffledTrain)),breaks=K,labels=FALSE)
+for(i in 1:K){
+    #Segement your data by fold using the which() function 
+    testIndexes <- which(folds==i,arr.ind=TRUE)
+    testData <- shuffledTrain[testIndexes, ]
+    trainData <- shuffledTrain[-testIndexes, ]
+    
+    for(j in 1:length(formulas)) {
+      m <- lm(formulas[[j]], data = trainData)
+      preds <- predict(m, testData)
+      mse <- mean((preds - testData$crm1000)^2)
+      Prederrors[i,j] <- mse
+    }
+    
+    # Compute the Negative Binomial seperately
+    nb_glm <- glm.nb(crimes ~ offset(log(popul / 1000)) + log(percapitaarea) + log(popul) + log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + region, data = trainData)
+    preds <- 1000 * predict(nb_glm, testData, type="response") / testData$popul
+    mse <- mean((preds - testData$crm1000)^2)
+    Prederrors[i,6] <- mse
+}
+res <- colMeans(Prederrors)
+kable(t(res[order(res)]), digits = 2, caption = "Average MSE across 10-folds") %>%
+  kable_styling()
+```
+
+## Test Validation
+At this point of the analysis everything had been conducted on the training 80% of the dataset. Cross validation was used as part of the model building process which means that the results will be biased. We kept the test set held out until the end when all models were finalized so that the estimated mean squared error is a better indication of the true mean squared error. The results on the test sets are as follows
+
+```{r}
+test_errors <- as.data.frame(matrix(0,1,length(formulas) + 1))
+test_errors <- rep(0, length(formulas) + 1)
+names(test_errors) <- c("Simple", "Additive", "RegionInter", "AllInter","Full", "NB")
+for(j in 1:length(formulas)){
+    m <- lm(formulas[[j]], data = train)
+    preds <- predict(m, test)
+    mse <- mean((preds - test$crm1000)^2)
+    test_errors[j] <- mse
+}
+# Compute the Negative Binomial seperately
+nb_glm <- glm.nb(crimes ~ offset(log(popul / 1000)) + log(percapitaarea) + log(popul) + log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + region, data = train)
+preds <- 1000 * predict(nb_glm, test, type="response") / test$popul
+mse <- mean((preds - test$crm1000)^2)
+test_errors[6] <- mse
+kable(t(test_errors[order(test_errors)]), digits = 2, caption = "Test MSE will all data from test included") %>%
+  kable_styling()
+```
+
+
+```{r}
+nokings_train <- train[train$county != "Kings",]
+test_errors_nokings <- as.data.frame(matrix(0,1,length(formulas) + 1))
+test_errors_nokings <- rep(0, length(formulas) + 1)
+names(test_errors_nokings) <- c("Simple", "Additive", "RegionInter", "AllInter","Full", "NB")
+for(j in 1:length(formulas)){
+    m <- lm(formulas[[j]], data = nokings_train)
+    preds <- predict(m, test)
+    mse <- mean((preds - test$crm1000)^2)
+    test_errors_nokings[j] <- mse
+}
+# Compute the Negative Binomial seperately
+nb_glm <- glm.nb(crimes ~ offset(log(popul / 1000)) + log(percapitaarea) + log(popul) + log(pop1834) + log(percapitabeds) + log(poors) + log(percapitaincome) + region, data = nokings_train)
+preds <- 1000 * predict(nb_glm, test, type="response") / test$popul
+mse <- mean((preds - test$crm1000)^2)
+test_errors_nokings[6] <- mse
+kable(t(test_errors_nokings[order(test_errors_nokings)]), digits = 2, caption = "Test MSE with Kings County excluded") %>%
+  kable_styling()
+```
+
+We can see that including Kings County (NY) leads to slightly better results in the test set.
+Based on these results, we can see that both the negative binomial and the additive model without interactions performs the best and almost identically.
+Since linear regression is faster and simpler to interpret the results our final model is the Log Transformed model with no interactions, in the models section.
+
+Using this as our final model, we can fit this model to the test selection data. This can be seen as a more conservative approach to our parameters since it is on the test set rather than the training. 
+```{r}
+final_model_test <- lm(log_formula, data = test)
+sm_final <- summary(final_model_test)
+kable(sm_final$coeff[,c(1,2,4)], digits = 3, caption = "Test set coefficients and p-values") %>%
+  kable_styling()
+```
+
+We have $R^2_{adj} =$ `r round(sm_final$adj.r.squared, 3)` and $R^2 =$ `r round(sm_final$r.squared, 3)`. Which means that `r round(sm_final$r.squared * 100,2)` percent of the error is explained by our model. The p-values in this table are the most conservative, since we have not seen any of the data when testing this hypothesis.
+In this way, it is like a properly run experiment. We do not want to fish for statistically significance by creating hypotheses based on our data set. Instead if we formulate our hypothesis beforehand we should use the data set to validate our hypothesis.
+
+### Final Coefficients
+Combining the training and test data sets and fitting our final model on this gives us our final coefficients.
+We want to use all the data if we are going to predict for more counties in the future.
+We can interpret these estimates exactly the same as for the training and test data.
+The p-values are artificially low, due to a large sample size and the fact that 80% of the data is from the training set which we used to generated the hypothesis.
+
+```{r}
+final_model <- lm(log_formula, data = data)
+sm <- summary(final_model)
+kable(sm$coeff[,c(1,2,4)], digits = 3, caption = "Final coefficients and p-values") %>%
+  kable_styling()
+```
+
+We find it easier to understand some of these estimates with plots. Below we show how the predicted crime rates change when holding all variables constant (keeping the other variables at the mean) while varying only the population. We range the population from the minimum `r min(data$popul)` to the maximum `r max(data$popul)`.
+
+```{r}
+# Create a data frame with the means to see how predictions change
+mean_vars_all <- as.data.frame(t(colMeans(data[, c("percapitaarea", "popul", "pop1834", "percapitabeds", "poors", "percapitaincome")])))
+mean_vars_all$region = c("west")
+# Hold everything else constant while only varying the poor percentage
+# Range from ~ min to ~ max
+# summary(train$poors)
+popul_range <- seq(100043, 8863164, by = 1000)
+#poor_range <- seq(1, 37, by = 1)
+popul_range_df <- mean_vars_all[rep(1, length(popul_range)), ]
+popul_range_df$popul <- popul_range
+popul_range_df$pred_crm1000 <- predict(final_model, popul_range_df)
+# kable(nb_res, digits = 3)
+ggplot(aes(x = popul, y = pred_crm1000), data = popul_range_df) +
+  geom_line() +
+  xlab("Population") +
+  ylab("Predicted crimes per 1000") +
+  ggtitle("Population effect on crime rate")
+```
+
+## Conclusion
+In this analysis we investigated the crime rates for 440 counties in the United States.
+The dataset was split into 80% training data and 20% test data.
+The test dataset was untouched until all models were finalized.
+We compared multiple linear regression models and a negative binomial model and compared the results.
+The models were compared using 10-fold cross validation as part of the model building process as well as for validation.
+The most predictive variables in the data set were the population, the percentage of the population between 18 and 34, the per captia beds, the percentage of poor people, the per capita income, and the region in the United States. We showed that the difference between West and Northeast crime rate had a statistically significant difference and well as the difference between West and Midwest.
+
+
+## Appendix
+
+### Data Summary
+| Variable        | Description                                                                                                                                 |
+|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| id              | identification number, 1–440.                                                                                                               |
+| county          | county name.                                                                                                                                |
+| state           | state abbreviation.                                                                                                                         |
+| area            | land area (square miles).                                                                                                                   |
+| popul           | estimated 1990 population.                                                                                                                  |
+| pop1834         | percent of 1990 CDI population aged 18–34.                                                                                                  |
+| pop65plus       | percent of 1990 CDI population aged 65 years old or older.                                                                                  |
+| phys            | number of professionally active nonfederal physicians during 1990.                                                                          |
+| beds            | total number of hospital beds, cribs and bassinets during 1990.                                                                             |
+| crimes          | total number of serious crimes in 1990 (including murder, rape, robbery, aggravated assault, burglary, larceny-theft, motor vehicle theft). |
+| higrads         | percent of adults (25 yrs old or older) who completed at least 12 years of school.                                                          |
+| bachelors       | percent of adults (25 yrs old or older) with bachelor’s degree.                                                                             |
+| poors           | Percent of 1990 CDI population with income below poverty level.                                                                             |
+| unemployed      | percent of 1990 CDI labor force which is unemployed.                                                                                        |
+| percapitaincome | per capita income of 1990 CDI population (dollars).                                                                                         |
+| totalincome     | total personal income of 1990 CDI population (in millions of dollars).                                                                      |
+| region          | Geographic region classification used by the U.S. Bureau of the Census, where 1=Northeast, 2 = Midwest, 3=South, 4=West.1                   |
+| percapitabeds | number of beds (see descriptions above) per capita |
+| percapitaarea | area per capita |
+| percaptiaphys | physicians per capita |
+
+
+```{r}
+# Manually selected, remove the total columns
+sub_train <- train[, c("id", "crm1000", "percapitaarea", "popul","pop1834","pop65plus","percapitaphys","percapitabeds","higrads","bachelors","poors","unemployed","percapitaincome")]
+```
+
+### Model Diagnostics
+
+#### Studentized Residuals
+```{r}
+rs <- rstudent(log_mt)
+plot(rs, main = "Studentized Residuals", ylab = "Studentized Residuals", xlab = "i")
+abline(h=2, col = "red")
+abline(h=-2, col = "red")
+# Get the index of the studentized residuals > qnorm(.975)
+highVals <- sort(abs(rs)[abs(rs) > qnorm(.975)], decreasing = T)
+highTrain <- train[names(highVals), c("county", "state")]
+kable(cbind(highTrain, "Student Residuals" = highVals), digits = 3, row.names = F) %>%
+  kable_styling()
+```
+
+We can see from the Studentized residuals that there are a few notable points.
+Kings county in NY is extremely far away from other points. We compared models with and without Kings county but we found that keeping Kings county in the data set had a better test mean squared error.
+
+### DFBETA on continuous coefficients
+```{r, fig.height=11, fig.width = 8}
+par(mfrow=c(3,2),oma=c(0,0,4,0))
+infl <- influence(log_mt)
+for(n in colnames(infl$coefficients)[2:7]) {
+  plot(infl$coefficients[,n], type="h", main = n)
+  abline(h = 2 / sqrt(length(train)), col = "red")
+  abline(h = -2 / sqrt(length(train)), col = "red")
+}
+```
+
+```{r}
+dfbetas <- as.data.frame(infl$coefficients[,2:7])
+dfbetas$county <- paste0(train$county, " (", train$state, ")")
+gather(dfbetas, coefficient, DFBETA, -county) %>% 
+  filter(abs(DFBETA) > 2 / sqrt(length(train))) %>%
+  arrange(desc(abs(DFBETA))) %>%
+  top_n(n = 25, wt = abs(DFBETA)) %>%
+  kable(digits = 3, caption = "High > 2/sqrt(n) DFBETA values") %>%
+  kable_styling()
+```
+
+This table shows the sorted extreme $DFBETA$ values for each of the coefficients.
+Take for example Monroe (IN), which has a huge influence on the $pop1834$ parameter.
+If we look at the data, we see that Monroe has `r train[train$county == "Monroe","pop1834"]`% of its population between 18 and 34.
+We see that Kings (NY), influences many of the coefficients and has some of the most extreme values.
+It is by far the most influential and extreme point in the data.
+
+
+#### Model Diagnostic Plots
+```{r, fig.height=8}
+par(mfrow=c(2,2),oma=c(0,0,4,0))
+plot(full_mt, sub.caption = "Final Model Diagnostic Plots")
+```
+
+We can see from the diagnostic plots that the residuals and fitted values are approximately symmetric and the residuals don't appear to be increasing or decreasing as the fitted values increases.
+The normal QQ plot shows that we have larger tails than we would like.
+The estimates for the parameters do not dependent on it following a normal distribution but our p-values should be interpreted a little pessimistically.
+The two points that are labeled, 6 (Kings) and 1 (Los Angeles) are outliers.
+We can see that Los Angeles has a high leverage and also an extreme standardized residual which makes it influential.
+Kings county is closer to the mean for the dependent variables so it's leverage is lower.
+It is still marked by the Residuals vs Leverage plot as an issue as its residual is so high.
+
+```{r, eval=F}
+plot(log_mt, sub.caption = "Log Model Diagnostic Plots")
+plot(inter_mt, sub.caption = "Interactions (Region) Model Diagnostic Plots")
+plot(inter_full_mt, sub.caption = "Interactions (Full) Model Diagnostic Plots")
+```
+
+### Correlations
+```{r, fig.width=8, fig.height=10, message=FALSE}
+library(gplots)
+cor_matrix <- cor(sub_train[-1])
+distmat<-1 - cor_matrix
+hh<-heatmap.2(as.matrix(distmat), col=redblue(75),cexRow=.5, key=F, symkey=FALSE, trace = "none", main = "County Feature Distances")
+```
+This clustered distance matrix was how we selected which variables to remove from the model. The blue variables are negatively correlated with each other and the red variables are positively correlated.
+
+### Outliers
+```{r}
+ggplot(aes(x = region, y = crm1000), data = train) +
+  geom_boxplot() +
+  geom_text(aes(x = region, y = crm1000, label = county), nudge_x = .2, data = train[which.max(train$crm1000),]) +
+  ggtitle("Crime rate per 1000 by region")
+```
+We can see that Kings county is high for its region and overall.
+
+
+### References

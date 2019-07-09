@@ -1,0 +1,2074 @@
+---
+title: 1990 to 1992 Census Crime Rate Prediction.
+author: Stefan Eng
+date: '2019-02-08'
+slug: 1990-1992-census-crime-prediction
+categories:
+  - R
+  - school
+  - project
+tags:
+  - R
+  - analysis
+  - regression
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: true    
+bibliography: ../../static/bibtex/crime_rate_chalmers.bib
+csl: ../../static/bibtex/acm-sig-proceedings.csl     
+---
+
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>We are considering a dataset that provides some demographic information for 440 of the most populous counties in the United States in years 1990-92. Each line of the dataset provides information on 14 variables for a single county. Counties with missing data were deleted from the dataset. We are building models to predict the number of crimes per 1000 people in each county. We first explore linear regression models and then a negative binomial regression model. We found that the best linear regression model performed similarly to the negative binomial regression model on the training and test set using the same variables.</p>
+</div>
+<div id="goals" class="section level2">
+<h2>Goals</h2>
+<p>The goals of the analysis was the find a model that is simple yet explains as much as possible. The model should make sense first and foremost. Automatic methods such as the backwards step algorithm were used as auxiliary methods to supplement a more hand selected model. We decided against using all possible subsets selection as a matter of principle as it can lead to models that lack explainability. We explore interactions between variables as well as standard additive models. Once model selection is done based on the training set the final results are reported against the test set (20% of the dataset). The test set was not looked at or used in the model building process. The models were compared on the training set using 10-fold cross validation and leave one out cross validation (LOOCV).</p>
+</div>
+<div id="data-processing" class="section level2">
+<h2>Data Processing</h2>
+<p>Some additional variables were created. The variables “beds”, “phys”, and “area” were all divided by the population to give a per capita total number of hospital beds, cribs and bassinets, per capita number of physicians practicing, and the per capita area. We then remove the total quantities from the data set. We found that working with per capita was more informative than the direct quantities. The data was also transformed almost entirely with natural log transform as it performed better for our model. We arrived at natural log based on the plots, residuals plots, and looking how the model’s <span class="math inline">\(R^2\)</span> changed with regard to the transformations along with cross validation. The data summary can be found in the appendix.</p>
+</div>
+<div id="models" class="section level2">
+<h2>Models</h2>
+<div id="full-model" class="section level3">
+<h3>Full Model</h3>
+<pre><code>crm1000 ~ percapitaarea + popul + pop1834 + pop65plus +
+          percapitaphys + percapitabeds + higrads + bachelors +
+          poors + unemployed + percapitaincome + region</code></pre>
+<p>The full model was used as a baseline model, and subsequent models were reduced from this model.</p>
+<div id="base-model" class="section level4">
+<h4>Base Model</h4>
+<pre><code>crm1000 ~ percapitaarea + popul + pop1834 +
+          percapitabeds + poors + percapitaincome + region</code></pre>
+<p>These are the variables from which all the other models are based. We arrived at this model by keeping one variable from each correlation cluster that seemed to make the most intuitive sense to keep. We confirmed that this was a good model by starting with all of the variables and using backward selection to arrive at the identicial model that we had selected by hand. Then a partial F-test was performed, see table below. The F statistic was extremely small, which means that the residual sum of squares was almost the same after dropping the variables <code>pop65plus</code>, <code>percapitaphys</code>, <code>higrads</code>, <code>bachelors</code>, and <code>unemployed</code>. From this reduced model, we built up variations that involved transformations and interactions.</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-3">Table 1: </span>Partial F-Test for Full model vs final model (without transformations)
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Res.Df
+</th>
+<th style="text-align:right;">
+RSS
+</th>
+<th style="text-align:right;">
+Df
+</th>
+<th style="text-align:right;">
+Sum of Sq
+</th>
+<th style="text-align:right;">
+F
+</th>
+<th style="text-align:right;">
+Pr(&gt;F)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+342
+</td>
+<td style="text-align:right;">
+143881.3
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+337
+</td>
+<td style="text-align:right;">
+143017.6
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+863.651
+</td>
+<td style="text-align:right;">
+0.407
+</td>
+<td style="text-align:right;">
+0.844
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="final-model-log-transformed-model-with-no-interactions" class="section level3">
+<h3>(Final Model) Log Transformed model with no interactions</h3>
+<p>This model ended up being our final model selection. The transformation were found through cross validation and analysis of the plots of the data.</p>
+<pre><code>crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) +
+          log(percapitabeds) + log(poors) + log(percapitaincome) + region</code></pre>
+</div>
+<div id="transformations-and-interactions-with-only-region." class="section level3">
+<h3>Transformations and Interactions with only region.</h3>
+<p>We included all interactions between the continuous variables and the region. We then backward selected that reduced to (log) population and (log) per capita income against the region. While running the backwards selection we checked that the main effects were not dropped while the interactions were kept.</p>
+<pre><code>crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) +
+          log(percapitabeds) + log(poors) + log(percapitaincome) +
+          region + log(popul):region + log(percapitaincome):region</code></pre>
+</div>
+<div id="transformations-and-interactions-against-all-variables." class="section level3">
+<h3>Transformations and Interactions against all variables.</h3>
+<p>We included the interactions between all variables (including continuous-continuous) then backward selected.
+Both of the interactions models included <code>log(popul):region</code>
+but the larger interaction model did not include <code>log(percapitaincome):region</code>. We suspect this may be from the correlation between per capita income and some of the other variables that are included such as the percentage of poor people.</p>
+<pre><code>crm1000 ~ log(percapitaarea) + log(popul) + log(pop1834) +
+          log(percapitabeds) + log(poors) + log(percapitaincome) +
+          region + log(popul):log(percapitabeds) +
+          log(popul):log(poors) + log(popul):log(percapitaincome) +
+          log(popul):region + log(pop1834):region +
+          log(percapitabeds):region + log(poors):log(percapitaincome) +
+          log(poors):region</code></pre>
+</div>
+<div id="negative-binomial-generalized-linear-model" class="section level3">
+<h3>Negative Binomial Generalized Linear Model</h3>
+<p>We used the same variables from the log transformed model with no interactions. Instead of modeling crime rate per 1000 people directly we model the crimes. We use an offset to adjust the parameters according to the population (more is described in Negative Binomial Model section).</p>
+<pre><code>crimes ~ offset(log(popul / 1000)) + log(percapitaarea) +
+         log(popul) + log(pop1834) + log(percapitabeds) +
+         log(poors) + log(percapitaincome) + region</code></pre>
+</div>
+<div id="other-models" class="section level3">
+<h3>Other models</h3>
+<p>For our cross-validation and model selection we included two models which we did not intend to use but only for comparision purposes. They were the full model which was described above. Also, we included a model which we call the <em>simple model</em> which only included the natural log of the percentage of poor people in the county.</p>
+</div>
+</div>
+<div id="multicollinearity" class="section level2">
+<h2>Multicollinearity</h2>
+<p>In this dataset there are many variables that are highly correlated (see appendix for correlation plot). We found that the percentage of poor people in a county was highly correlated with the per capita income and the number of high school grads. If we include all of the variables with high multicollinearity the standard errors will be increased and some of the variables may not end up being significant. We used the Variance inflation factor (VIF) to measure the multicollinearity in our model. The VIF gives us
+a measure of how much the coefficient’s variance will increase due to
+collinearity between the other variables <span class="citation">[<a href="#ref-isl">2</a>]</span>. The VIF factors are the computed by regressing all the other explanatory variables on a single variable <span class="math inline">\(x_i\)</span>. For each variable <span class="math inline">\(i\)</span>, we calculate the VIF by performing <span class="math inline">\(i\)</span> regressions using all other variables to predict <span class="math inline">\(x_i\)</span>.
+<span class="math display">\[
+x_i = \beta_0 + \beta_1 x_1 + \cdots + \beta_{i - 1} x_{i - 1} + \beta_{i + 1} x_{i + 1} + \cdots \beta_{p-1} x_{p-1}
+\]</span>
+Then the VIF factor is equal to
+<span class="math display">\[
+VIF_i = \frac{1}{1 - R_i^2}
+\]</span>
+Where <span class="math inline">\(R_i^2\)</span> is the <span class="math inline">\(R^2\)</span> when using all other variables in a regression on variable <span class="math inline">\(i\)</span>. <span class="citation">[<a href="#ref-wiki:vif">4</a>]</span>
+We removed the variables for per capita income, the number of high school graduates, and the number of bachelor degree graduates based on the VIF results. The last column in the table shows how much the standard error of the variable is increased due to the collinearity. For example, for the bachelors variable the value of 2.834 means that the standard error for <span class="math inline">\(\beta_{bachelors}\)</span> is 2.834 larger than if the variables were not correlated with each other.</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+VIF
+</th>
+<th style="text-align:right;">
+DF
+</th>
+<th style="text-align:right;">
+VIF^(1/(2*Df))
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+bachelors
+</td>
+<td style="text-align:right;">
+7.716
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2.778
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+percapitaincome
+</td>
+<td style="text-align:right;">
+5.490
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2.343
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+higrads
+</td>
+<td style="text-align:right;">
+5.022
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2.241
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+poors
+</td>
+<td style="text-align:right;">
+4.461
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+2.112
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+percapitabeds
+</td>
+<td style="text-align:right;">
+3.582
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.893
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+percapitaphys
+</td>
+<td style="text-align:right;">
+3.435
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.853
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+region
+</td>
+<td style="text-align:right;">
+2.716
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+1.181
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pop1834
+</td>
+<td style="text-align:right;">
+2.320
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.523
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+unemployed
+</td>
+<td style="text-align:right;">
+2.304
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.518
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pop65plus
+</td>
+<td style="text-align:right;">
+2.146
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.465
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+percapitaarea
+</td>
+<td style="text-align:right;">
+1.563
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.250
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+popul
+</td>
+<td style="text-align:right;">
+1.245
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.116
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="outliers" class="section level2">
+<h2>Outliers</h2>
+<p>When looking at the training data we noticed one outlier with respect to the target variable in the training dataset (Kings County in New York). It has a crime rate of approximately 296 per 1000 people. The median for the training set was a crime rate of 53.55 per 1000 people. In the training set we found that Kings County has larger leverage and also has high influence. There are also outliers with respect to the other variables but the amount is reduced when we took the log transform of the data. In the appendix, we go into more detailed look at other outliers based on the studentized residuals and influence.</p>
+</div>
+<div id="interactions" class="section level2">
+<h2>Interactions</h2>
+<p>We explored and built models that included interactions between the variables. We found that while some of the interactions were significant, when doing cross validation the additive model without any interactions performed the best. Using the partial F-test, we compared the two interaction models with the additive model. For the interactions model with only region, we did not reject the null hypothesis at the <span class="math inline">\(\alpha = 0.05\)</span> level, as the p-value was 0.06. The value was close enough that we decided to continue to compare with this model as well. The results can be see in the table below. When we run a partial F-test on the interaction models with more interactions, we get a larger test statistic that allows us to reject the null hypothesis at the <span class="math inline">\(\alpha = 0.05\)</span> level.</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-5">Table 2: </span>Partial F-test for region interactions model
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Res.Df
+</th>
+<th style="text-align:right;">
+RSS
+</th>
+<th style="text-align:right;">
+Df
+</th>
+<th style="text-align:right;">
+Sum of Sq
+</th>
+<th style="text-align:right;">
+F
+</th>
+<th style="text-align:right;">
+Pr(&gt;F)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+342
+</td>
+<td style="text-align:right;">
+121929.0
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+336
+</td>
+<td style="text-align:right;">
+117312.6
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+4616.4
+</td>
+<td style="text-align:right;">
+2.204
+</td>
+<td style="text-align:right;">
+0.042
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-6">Table 3: </span>Partial F-test for full interactions model
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Res.Df
+</th>
+<th style="text-align:right;">
+RSS
+</th>
+<th style="text-align:right;">
+Df
+</th>
+<th style="text-align:right;">
+Sum of Sq
+</th>
+<th style="text-align:right;">
+F
+</th>
+<th style="text-align:right;">
+Pr(&gt;F)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+342
+</td>
+<td style="text-align:right;">
+121929.0
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+326
+</td>
+<td style="text-align:right;">
+106585.4
+</td>
+<td style="text-align:right;">
+16
+</td>
+<td style="text-align:right;">
+15343.55
+</td>
+<td style="text-align:right;">
+2.933093
+</td>
+<td style="text-align:right;">
+0.00015
+</td>
+</tr>
+</tbody>
+</table>
+<p>In the conditional plot we can see the values of the log of population vs the crime rate for each of the regions. The bottom left panel is the West, bottom right is the northeast, top left is the midwest and top right is the south. There seems to be a slightly smaller slope in the West panel, but overall it is not clear that the interactions are needed.</p>
+<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-7-1.png" width="480" /></p>
+<p>Our original cross validation was performed on data that was not centered (mean subtracted off). Centering can improve the standard errors and thus the p-values of the estimates but the predictions for the new values are the same. Since our final model does not include the interactions, we decided against centering the data.
+When building the interaction models we included all of the interactions (for region and then for all variables) and then backward selected. We did this twice: once with the data centered and once without the data being centered. While this does not make a difference for the estimate, the standard errors decrease in the centered model. That made the backwards selection algorithm stop earlier when we centered the data, and thus included more of the interaction variables. Again, at this point we checked to make sure that no interaction effects were included when a main effect was dropped. When including these centered models in our cross validation we found that they performed worse than the backward selection models on the original (non-standardized) data so we chose not to include them in our analysis.</p>
+</div>
+<div id="model-interpretation" class="section level2">
+<h2>Model Interpretation</h2>
+<p>On the training data, we had an <span class="math inline">\(R^2\)</span> of 0.56 which means that 54.3% of the error is explained by our model. The <span class="math inline">\(R_{adj}^2\)</span> was 0.548.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Estimate
+</th>
+<th style="text-align:right;">
+Std. Error
+</th>
+<th style="text-align:right;">
+Pr(&gt;|t|)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+-360.441
+</td>
+<td style="text-align:right;">
+105.325
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaarea)
+</td>
+<td style="text-align:right;">
+-5.346
+</td>
+<td style="text-align:right;">
+1.462
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(popul)
+</td>
+<td style="text-align:right;">
+6.490
+</td>
+<td style="text-align:right;">
+1.944
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+19.330
+</td>
+<td style="text-align:right;">
+7.858
+</td>
+<td style="text-align:right;">
+0.014
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitabeds)
+</td>
+<td style="text-align:right;">
+4.351
+</td>
+<td style="text-align:right;">
+2.495
+</td>
+<td style="text-align:right;">
+0.082
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(poors)
+</td>
+<td style="text-align:right;">
+25.918
+</td>
+<td style="text-align:right;">
+3.844
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+22.224
+</td>
+<td style="text-align:right;">
+9.501
+</td>
+<td style="text-align:right;">
+0.020
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionnortheast
+</td>
+<td style="text-align:right;">
+-17.144
+</td>
+<td style="text-align:right;">
+3.863
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionmidwest
+</td>
+<td style="text-align:right;">
+-9.936
+</td>
+<td style="text-align:right;">
+3.791
+</td>
+<td style="text-align:right;">
+0.009
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionsouth
+</td>
+<td style="text-align:right;">
+4.436
+</td>
+<td style="text-align:right;">
+3.425
+</td>
+<td style="text-align:right;">
+0.196
+</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s look at what these estimates actually mean. Since we are working on a log scale we can interpret the estimate <span class="math inline">\(\beta_{area}\)</span> for log(percapitaarea) as the change in crime rate per 1000, <span class="math inline">\(crm_{1000}\)</span>, when <span class="math inline">\(log(percapitaarea)\)</span> increases by 1. That is, <span class="math inline">\(\ln x_{area} + 1 = \ln(e \cdot x_{area})\)</span>. So if <span class="math inline">\(x_{area}\)</span> is <em>multiplied</em> by <span class="math inline">\(e \approx 2.718\)</span>, then <span class="math inline">\(crm_{1000}\)</span> increases by <span class="math inline">\(\beta_{area}\)</span>. It can be easier to interpret if we look at percentage increase instead of multiplying by <span class="math inline">\(e\)</span>. If the per captia area increases by 10%, then the crime rate per 1000 people will <em>decrease</em> by 0.49. <span class="math inline">\(\beta_{area} \cdot ln(1.10) = -5.127 \cdot ln(1.10) = -0.49\)</span>. This is summarized in the table</p>
+<table>
+<caption>
+<span id="tab:unnamed-chunk-10">Table 4: </span>Change in crime rate by percentage increase
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+5%
+</th>
+<th style="text-align:right;">
+10%
+</th>
+<th style="text-align:right;">
+20%
+</th>
+<th style="text-align:right;">
+30%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+percapitaarea
+</td>
+<td style="text-align:right;">
+-0.261
+</td>
+<td style="text-align:right;">
+-0.510
+</td>
+<td style="text-align:right;">
+-0.975
+</td>
+<td style="text-align:right;">
+-1.403
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+popul
+</td>
+<td style="text-align:right;">
+0.317
+</td>
+<td style="text-align:right;">
+0.619
+</td>
+<td style="text-align:right;">
+1.183
+</td>
+<td style="text-align:right;">
+1.703
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+pop1834
+</td>
+<td style="text-align:right;">
+0.943
+</td>
+<td style="text-align:right;">
+1.842
+</td>
+<td style="text-align:right;">
+3.524
+</td>
+<td style="text-align:right;">
+5.072
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+percapitabeds
+</td>
+<td style="text-align:right;">
+0.212
+</td>
+<td style="text-align:right;">
+0.415
+</td>
+<td style="text-align:right;">
+0.793
+</td>
+<td style="text-align:right;">
+1.142
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+poors
+</td>
+<td style="text-align:right;">
+1.265
+</td>
+<td style="text-align:right;">
+2.470
+</td>
+<td style="text-align:right;">
+4.725
+</td>
+<td style="text-align:right;">
+6.800
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+percapitaincome
+</td>
+<td style="text-align:right;">
+1.084
+</td>
+<td style="text-align:right;">
+2.118
+</td>
+<td style="text-align:right;">
+4.052
+</td>
+<td style="text-align:right;">
+5.831
+</td>
+</tr>
+</tbody>
+</table>
+<p>From this table we can see that if the the percentage of poor people increased from 20 to 22, we would expect to see an increase of 2.428 in the number of crimes per 1000 people.
+We can also see that if the per captia area increases from <span class="math inline">\(5 \times 10^{-3}\)</span> to <span class="math inline">\(5.5 \times 10^{-3}\)</span> we would expect the number of crimes per 1000 people to <em>drop</em> by 0.489.</p>
+<div id="region" class="section level3">
+<h3>Region</h3>
+<p>We used “West” as our reference category so all the parameter estimates are in relation to the west region. We can interpret the estimate <span class="math inline">\(\beta_{region_{NE}} = -18.548\)</span> as the estimate change in crimes per 1000 people between the west and the north east. That is, holding all else constant, the north-east region is estimated to have <span class="math inline">\(18.548\)</span> less crimes per 1000 people. Both the north-east and the midwest are statistically significant at the <span class="math inline">\(\alpha = 0.05\)</span> level. The difference between the south and the west’s rate of crimes is not statistically significant. That means that the there is not enough evidence from the data to show there is a difference in crime rates between the south and the west (assuming all else is held constant).</p>
+</div>
+</div>
+<div id="negative-binomial-model" class="section level2">
+<h2>Negative Binomial Model</h2>
+<p>We also explored generalized linear models for predicting the crime rate. Since we are dealing with the rate <span class="math inline">\(1000 * crimes/popul\)</span>, we can formulate our model as</p>
+<p><span class="math display">\[
+log(crimes) = log(popul/1000) + X\beta
+\]</span></p>
+<p>Since we are using the (log) population in our model, having an offset is equivalent to the value of the coefficient for log(population) will increased by 1, and the intercept decreased by log(1000). We first tested a Poisson regression which assumed that the variance and expected value are the same for the crimes. When performing a dispersion test at <span class="math inline">\(\alpha = 0.05\)</span>, we rejected the null that dispersion is equal to one. (Estimated dispersion was 2622.163). When dispersion is greater than one, we say that the data is overdispersed. The negative binomial model works better in the presence of overdispersion.</p>
+<div id="interpreting-results" class="section level3">
+<h3>Interpreting Results</h3>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Estimate
+</th>
+<th style="text-align:right;">
+p-value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+-3.262
+</td>
+<td style="text-align:right;">
+0.057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaarea)
+</td>
+<td style="text-align:right;">
+-0.065
+</td>
+<td style="text-align:right;">
+0.006
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(popul)
+</td>
+<td style="text-align:right;">
+0.116
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+0.330
+</td>
+<td style="text-align:right;">
+0.010
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitabeds)
+</td>
+<td style="text-align:right;">
+0.105
+</td>
+<td style="text-align:right;">
+0.010
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(poors)
+</td>
+<td style="text-align:right;">
+0.417
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+0.428
+</td>
+<td style="text-align:right;">
+0.006
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionnortheast
+</td>
+<td style="text-align:right;">
+-0.404
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionmidwest
+</td>
+<td style="text-align:right;">
+-0.219
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionsouth
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+0.416
+</td>
+</tr>
+</tbody>
+</table>
+<p>We can interpret the results from negative binomial similarly to Poisson regression <span class="citation">[<a href="#ref-agresti:categorical">1</a>]</span> <span class="citation">[<a href="#ref-mit_statistics_for_applications">3</a>]</span>.
+Let’s look at how the percentage of poor people in a county influences the number of crimes.
+We have that
+<span class="math display">\[
+\log(crimes) = \beta_0 + \beta_{poors} \log x_{poors} + \cdots
+\]</span>
+or
+<span class="math display">\[
+crimes = \exp(\beta_0 + \beta_{poors} \log x_{poors}  + \cdots) = e^{\beta_0} x_{poors}^{\beta_{poors}} \cdots
+\]</span>
+Now if we want to see what happens as <span class="math inline">\(x_{poors}\)</span> changes, say to <span class="math inline">\(x_{poors}^{\prime}\)</span>, then we have that
+<span class="math display">\[
+\frac{crimes^{\prime}}{crimes} = \left(\frac{x_{poors}^{\prime}}{x_{poors}}\right)^{\beta_{poors}}
+\]</span>
+That is, the percentage change in the crimes is equal to the percentage change in percentage of poor people to the power of the coefficient for poors. Equivalently we pose this additively as
+<span class="math display">\[
+\log crimes^{\prime} - \log crimes = \beta_{poors} \left( \log x_{poors}^{\prime} - \log x_{poors} \right)
+\]</span>
+So if we kept all other variables constant, and increased <span class="math inline">\(x_{poors}\)</span> from 10 to 12 we would expect:
+<span class="math display">\[
+\frac{crimes^{\prime}}{crimes} = \left(\frac{12}{10} \right)^{0.414} = 1.078
+\]</span>
+That is, we would expect the crimes to increase by 7.8%. We can confirm this for the predicted crimes per 1000 people while holding all other variables at the means. When <span class="math inline">\(x_{poors} = 10\)</span>, then the predicted crime rate is 72.18. The predicted crime from for <span class="math inline">\(x_{poors} = 12\)</span> is 77.88. The ratio of these values is 1.079 which is what we found from the coefficient interpretation.</p>
+<p>It is also useful to look at how the predicts change as one of the variables varies. We set all of the variables involved in the regression to the means and then only varied the percentage of poor from 1 to 37, which is approximately the range found in the training set. It is easier to see how the crime rate changes from this graph due to the poor percentage changing than just the estimated coefficients.
+<img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-12-1.png" width="480" /></p>
+</div>
+</div>
+<div id="cross-validation" class="section level2">
+<h2>Cross Validation</h2>
+<p>Once we had built our models we used 10-fold cross validation to compare them against each other. We also used LOOCV which resulted in very similar results to the 10-fold cross validation. Once we had included the negative binomial model we switched to only using the 10-fold cross validation. The interactions models had a better adjusted <span class="math inline">\(R^2\)</span> value and were found with the partial F-test to have at least one parameters that should not be set to 0 (at alpha = 0.05 significance level). We included a model called “Full”, which had all of the dependent variables included (without transformation) and a “simple” model which is only using the natural log of the percentage of poor people for each county.</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-13">Table 5: </span>Average MSE across 10-folds
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+Additive
+</th>
+<th style="text-align:right;">
+NB
+</th>
+<th style="text-align:right;">
+RegionInter
+</th>
+<th style="text-align:right;">
+AllInter
+</th>
+<th style="text-align:right;">
+Full
+</th>
+<th style="text-align:right;">
+Simple
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+376.1
+</td>
+<td style="text-align:right;">
+391.38
+</td>
+<td style="text-align:right;">
+409.8
+</td>
+<td style="text-align:right;">
+421.52
+</td>
+<td style="text-align:right;">
+489.51
+</td>
+<td style="text-align:right;">
+606.04
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="test-validation" class="section level2">
+<h2>Test Validation</h2>
+<p>At this point of the analysis everything had been conducted on the training 80% of the dataset. Cross validation was used as part of the model building process which means that the results will be biased. We kept the test set held out until the end when all models were finalized so that the estimated mean squared error is a better indication of the true mean squared error. The results on the test sets are as follows</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-14">Table 6: </span>Test MSE will all data from test included
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+AllInter
+</th>
+<th style="text-align:right;">
+NB
+</th>
+<th style="text-align:right;">
+Additive
+</th>
+<th style="text-align:right;">
+RegionInter
+</th>
+<th style="text-align:right;">
+Full
+</th>
+<th style="text-align:right;">
+Simple
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+245.68
+</td>
+<td style="text-align:right;">
+251.68
+</td>
+<td style="text-align:right;">
+262.09
+</td>
+<td style="text-align:right;">
+276.91
+</td>
+<td style="text-align:right;">
+300.24
+</td>
+<td style="text-align:right;">
+459.16
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-15">Table 7: </span>Test MSE with Kings County excluded
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+AllInter
+</th>
+<th style="text-align:right;">
+Additive
+</th>
+<th style="text-align:right;">
+NB
+</th>
+<th style="text-align:right;">
+RegionInter
+</th>
+<th style="text-align:right;">
+Full
+</th>
+<th style="text-align:right;">
+Simple
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+231.13
+</td>
+<td style="text-align:right;">
+246.12
+</td>
+<td style="text-align:right;">
+248.63
+</td>
+<td style="text-align:right;">
+252.25
+</td>
+<td style="text-align:right;">
+296.38
+</td>
+<td style="text-align:right;">
+452.95
+</td>
+</tr>
+</tbody>
+</table>
+<p>We can see that including Kings County (NY) leads to slightly better results in the test set.
+Based on these results, we can see that both the negative binomial and the additive model without interactions performs the best and almost identically.
+Since linear regression is faster and simpler to interpret the results our final model is the Log Transformed model with no interactions, in the models section.</p>
+Using this as our final model, we can fit this model to the test selection data. This can be seen as a more conservative approach to our parameters since it is on the test set rather than the training.
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-16">Table 8: </span>Test set coefficients and p-values
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Estimate
+</th>
+<th style="text-align:right;">
+Std. Error
+</th>
+<th style="text-align:right;">
+Pr(&gt;|t|)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+-616.416
+</td>
+<td style="text-align:right;">
+199.524
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaarea)
+</td>
+<td style="text-align:right;">
+-1.448
+</td>
+<td style="text-align:right;">
+2.794
+</td>
+<td style="text-align:right;">
+0.606
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(popul)
+</td>
+<td style="text-align:right;">
+4.967
+</td>
+<td style="text-align:right;">
+3.525
+</td>
+<td style="text-align:right;">
+0.163
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+19.648
+</td>
+<td style="text-align:right;">
+11.078
+</td>
+<td style="text-align:right;">
+0.080
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitabeds)
+</td>
+<td style="text-align:right;">
+3.228
+</td>
+<td style="text-align:right;">
+4.428
+</td>
+<td style="text-align:right;">
+0.468
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(poors)
+</td>
+<td style="text-align:right;">
+25.484
+</td>
+<td style="text-align:right;">
+6.820
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+51.636
+</td>
+<td style="text-align:right;">
+18.351
+</td>
+<td style="text-align:right;">
+0.006
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionnortheast
+</td>
+<td style="text-align:right;">
+-23.065
+</td>
+<td style="text-align:right;">
+6.468
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionmidwest
+</td>
+<td style="text-align:right;">
+-5.330
+</td>
+<td style="text-align:right;">
+7.119
+</td>
+<td style="text-align:right;">
+0.456
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionsouth
+</td>
+<td style="text-align:right;">
+8.088
+</td>
+<td style="text-align:right;">
+6.582
+</td>
+<td style="text-align:right;">
+0.223
+</td>
+</tr>
+</tbody>
+</table>
+<p>We have <span class="math inline">\(R^2_{adj} =\)</span> 0.552 and <span class="math inline">\(R^2 =\)</span> 0.598. Which means that 59.8 percent of the error is explained by our model. The p-values in this table are the most conservative, since we have not seen any of the data when testing this hypothesis.
+In this way, it is like a properly run experiment. We do not want to fish for statistically significance by creating hypotheses based on our data set. Instead if we formulate our hypothesis beforehand we should use the data set to validate our hypothesis.</p>
+<div id="final-coefficients" class="section level3">
+<h3>Final Coefficients</h3>
+<p>Combining the training and test data sets and fitting our final model on this gives us our final coefficients.
+We want to use all the data if we are going to predict for more counties in the future.
+We can interpret these estimates exactly the same as for the training and test data.
+The p-values are artificially low, due to a large sample size and the fact that 80% of the data is from the training set which we used to generated the hypothesis.</p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-17">Table 9: </span>Final coefficients and p-values
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Estimate
+</th>
+<th style="text-align:right;">
+Std. Error
+</th>
+<th style="text-align:right;">
+Pr(&gt;|t|)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+-387.885
+</td>
+<td style="text-align:right;">
+92.606
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaarea)
+</td>
+<td style="text-align:right;">
+-5.009
+</td>
+<td style="text-align:right;">
+1.276
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(popul)
+</td>
+<td style="text-align:right;">
+6.108
+</td>
+<td style="text-align:right;">
+1.697
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+18.891
+</td>
+<td style="text-align:right;">
+6.415
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitabeds)
+</td>
+<td style="text-align:right;">
+4.327
+</td>
+<td style="text-align:right;">
+2.163
+</td>
+<td style="text-align:right;">
+0.046
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(poors)
+</td>
+<td style="text-align:right;">
+25.606
+</td>
+<td style="text-align:right;">
+3.345
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+25.910
+</td>
+<td style="text-align:right;">
+8.400
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionnortheast
+</td>
+<td style="text-align:right;">
+-18.795
+</td>
+<td style="text-align:right;">
+3.311
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionmidwest
+</td>
+<td style="text-align:right;">
+-9.823
+</td>
+<td style="text-align:right;">
+3.303
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+regionsouth
+</td>
+<td style="text-align:right;">
+4.531
+</td>
+<td style="text-align:right;">
+3.009
+</td>
+<td style="text-align:right;">
+0.133
+</td>
+</tr>
+</tbody>
+</table>
+<p>We find it easier to understand some of these estimates with plots. Below we show how the predicted crime rates change when holding all variables constant (keeping the other variables at the mean) while varying only the population. We range the population from the minimum 100043 to the maximum 8863164.</p>
+<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-18-1.png" width="480" /></p>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>In this analysis we investigated the crime rates for 440 counties in the United States.
+The dataset was split into 80% training data and 20% test data.
+The test dataset was untouched until all models were finalized.
+We compared multiple linear regression models and a negative binomial model and compared the results.
+The models were compared using 10-fold cross validation as part of the model building process as well as for validation.
+The most predictive variables in the data set were the population, the percentage of the population between 18 and 34, the per captia beds, the percentage of poor people, the per capita income, and the region in the United States. We showed that the difference between West and Northeast crime rate had a statistically significant difference and well as the difference between West and Midwest.</p>
+</div>
+<div id="appendix" class="section level2">
+<h2>Appendix</h2>
+<div id="data-summary" class="section level3">
+<h3>Data Summary</h3>
+<table>
+<colgroup>
+<col width="10%" />
+<col width="89%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>id</td>
+<td>identification number, 1–440.</td>
+</tr>
+<tr class="even">
+<td>county</td>
+<td>county name.</td>
+</tr>
+<tr class="odd">
+<td>state</td>
+<td>state abbreviation.</td>
+</tr>
+<tr class="even">
+<td>area</td>
+<td>land area (square miles).</td>
+</tr>
+<tr class="odd">
+<td>popul</td>
+<td>estimated 1990 population.</td>
+</tr>
+<tr class="even">
+<td>pop1834</td>
+<td>percent of 1990 CDI population aged 18–34.</td>
+</tr>
+<tr class="odd">
+<td>pop65plus</td>
+<td>percent of 1990 CDI population aged 65 years old or older.</td>
+</tr>
+<tr class="even">
+<td>phys</td>
+<td>number of professionally active nonfederal physicians during 1990.</td>
+</tr>
+<tr class="odd">
+<td>beds</td>
+<td>total number of hospital beds, cribs and bassinets during 1990.</td>
+</tr>
+<tr class="even">
+<td>crimes</td>
+<td>total number of serious crimes in 1990 (including murder, rape, robbery, aggravated assault, burglary, larceny-theft, motor vehicle theft).</td>
+</tr>
+<tr class="odd">
+<td>higrads</td>
+<td>percent of adults (25 yrs old or older) who completed at least 12 years of school.</td>
+</tr>
+<tr class="even">
+<td>bachelors</td>
+<td>percent of adults (25 yrs old or older) with bachelor’s degree.</td>
+</tr>
+<tr class="odd">
+<td>poors</td>
+<td>Percent of 1990 CDI population with income below poverty level.</td>
+</tr>
+<tr class="even">
+<td>unemployed</td>
+<td>percent of 1990 CDI labor force which is unemployed.</td>
+</tr>
+<tr class="odd">
+<td>percapitaincome</td>
+<td>per capita income of 1990 CDI population (dollars).</td>
+</tr>
+<tr class="even">
+<td>totalincome</td>
+<td>total personal income of 1990 CDI population (in millions of dollars).</td>
+</tr>
+<tr class="odd">
+<td>region</td>
+<td>Geographic region classification used by the U.S. Bureau of the Census, where 1=Northeast, 2 = Midwest, 3=South, 4=West.1</td>
+</tr>
+<tr class="even">
+<td>percapitabeds</td>
+<td>number of beds (see descriptions above) per capita</td>
+</tr>
+<tr class="odd">
+<td>percapitaarea</td>
+<td>area per capita</td>
+</tr>
+<tr class="even">
+<td>percaptiaphys</td>
+<td>physicians per capita</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="model-diagnostics" class="section level3">
+<h3>Model Diagnostics</h3>
+<div id="studentized-residuals" class="section level4">
+<h4>Studentized Residuals</h4>
+<img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-20-1.png" width="480" />
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+county
+</th>
+<th style="text-align:left;">
+state
+</th>
+<th style="text-align:right;">
+Student Residuals
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Kings
+</td>
+<td style="text-align:left;">
+NY
+</td>
+<td style="text-align:right;">
+12.753
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Atlantic
+</td>
+<td style="text-align:left;">
+NJ
+</td>
+<td style="text-align:right;">
+3.490
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+St._Louis_City
+</td>
+<td style="text-align:left;">
+MO
+</td>
+<td style="text-align:right;">
+3.183
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Ector
+</td>
+<td style="text-align:left;">
+TX
+</td>
+<td style="text-align:right;">
+2.817
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Leon
+</td>
+<td style="text-align:left;">
+FL
+</td>
+<td style="text-align:right;">
+2.570
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Delaware
+</td>
+<td style="text-align:left;">
+IN
+</td>
+<td style="text-align:right;">
+2.480
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Jefferson
+</td>
+<td style="text-align:left;">
+KY
+</td>
+<td style="text-align:right;">
+2.369
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Madison
+</td>
+<td style="text-align:left;">
+AL
+</td>
+<td style="text-align:right;">
+2.341
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Pulaski
+</td>
+<td style="text-align:left;">
+AR
+</td>
+<td style="text-align:right;">
+2.097
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Columbiana
+</td>
+<td style="text-align:left;">
+OH
+</td>
+<td style="text-align:right;">
+2.088
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Shawnee
+</td>
+<td style="text-align:left;">
+KS
+</td>
+<td style="text-align:right;">
+2.012
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Clay
+</td>
+<td style="text-align:left;">
+MO
+</td>
+<td style="text-align:right;">
+1.981
+</td>
+</tr>
+</tbody>
+</table>
+<p>We can see from the Studentized residuals that there are a few notable points.
+Kings county in NY is extremely far away from other points. We compared models with and without Kings county but we found that keeping Kings county in the data set had a better test mean squared error.</p>
+</div>
+</div>
+<div id="dfbeta-on-continuous-coefficients" class="section level3">
+<h3>DFBETA on continuous coefficients</h3>
+<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-21-1.png" width="768" /></p>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+<span id="tab:unnamed-chunk-22">Table 10: </span>High &gt; 2/sqrt(n) DFBETA values
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+county
+</th>
+<th style="text-align:left;">
+coefficient
+</th>
+<th style="text-align:right;">
+DFBETA
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Kings (NY)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+-5.579
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Kings (NY)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+-5.005
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Atlantic (NJ)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+3.532
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Kings (NY)
+</td>
+<td style="text-align:left;">
+log(poors)
+</td>
+<td style="text-align:right;">
+3.401
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Kings (NY)
+</td>
+<td style="text-align:left;">
+log(percapitaarea)
+</td>
+<td style="text-align:right;">
+-2.924
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Leon (FL)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+2.610
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Kings (NY)
+</td>
+<td style="text-align:left;">
+log(percapitabeds)
+</td>
+<td style="text-align:right;">
+-2.463
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Fulton (GA)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+2.322
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Ector (TX)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+1.700
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Westchester (NY)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+-1.634
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Pitt (NC)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+-1.578
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Clay (MO)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+-1.499
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Columbiana (OH)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+1.410
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Delaware (IN)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+-1.399
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Manatee (FL)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+-1.234
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Pitt (NC)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+-1.222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Sarasota (FL)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+-1.208
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Philadelphia (PA)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+1.169
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Columbiana (OH)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+1.144
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Alachua (FL)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+1.045
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Atlantic (NJ)
+</td>
+<td style="text-align:left;">
+log(poors)
+</td>
+<td style="text-align:right;">
+1.033
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Davis (UT)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+1.002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Collier (FL)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+0.994
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Yolo (CA)
+</td>
+<td style="text-align:left;">
+log(percapitaincome)
+</td>
+<td style="text-align:right;">
+0.990
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Hampshire (MA)
+</td>
+<td style="text-align:left;">
+log(pop1834)
+</td>
+<td style="text-align:right;">
+-0.990
+</td>
+</tr>
+</tbody>
+</table>
+<p>This table shows the sorted extreme <span class="math inline">\(DFBETA\)</span> values for each of the coefficients.
+Take for example Monroe (IN), which has a huge influence on the <span class="math inline">\(pop1834\)</span> parameter.
+If we look at the data, we see that Monroe has 26.1, 29% of its population between 18 and 34.
+We see that Kings (NY), influences many of the coefficients and has some of the most extreme values.
+It is by far the most influential and extreme point in the data.</p>
+<div id="model-diagnostic-plots" class="section level4">
+<h4>Model Diagnostic Plots</h4>
+<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-23-1.png" width="480" /></p>
+<p>We can see from the diagnostic plots that the residuals and fitted values are approximately symmetric and the residuals don’t appear to be increasing or decreasing as the fitted values increases.
+The normal QQ plot shows that we have larger tails than we would like.
+The estimates for the parameters do not dependent on it following a normal distribution but our p-values should be interpreted a little pessimistically.
+The two points that are labeled, 6 (Kings) and 1 (Los Angeles) are outliers.
+We can see that Los Angeles has a high leverage and also an extreme standardized residual which makes it influential.
+Kings county is closer to the mean for the dependent variables so it’s leverage is lower.
+It is still marked by the Residuals vs Leverage plot as an issue as its residual is so high.</p>
+</div>
+</div>
+<div id="correlations" class="section level3">
+<h3>Correlations</h3>
+<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-25-1.png" width="768" />
+This clustered distance matrix was how we selected which variables to remove from the model. The blue variables are negatively correlated with each other and the red variables are positively correlated.</p>
+</div>
+<div id="outliers-1" class="section level3">
+<h3>Outliers</h3>
+<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-26-1.png" width="480" />
+We can see that Kings county is high for its region and overall.</p>
+</div>
+<div id="references" class="section level3 unnumbered">
+<h3>References</h3>
+<div id="refs" class="references">
+<div id="ref-agresti:categorical">
+<p>[1] Agresti, A. 1990. <em>Categorical data analysis</em>. Wiley.</p>
+</div>
+<div id="ref-isl">
+<p>[2] James, G. et al. 2014. <em>An introduction to statistical learning: With applications in r</em>. Springer Publishing Company, Incorporated.</p>
+</div>
+<div id="ref-mit_statistics_for_applications">
+<p>[3] Statistics for applications: 18.650 / 18.6501: 2016. <em><a href="https://ocw.mit.edu/courses/mathematics/18-650-statistics-for-applications-fall-2016">https://ocw.mit.edu/courses/mathematics/18-650-statistics-for-applications-fall-2016</a></em>.</p>
+</div>
+<div id="ref-wiki:vif">
+<p>[4] Wikipedia contributors 2019. Variance inflation factor — Wikipedia, the free encyclopedia. <a href="https://en.wikipedia.org/w/index.php?title=Variance_inflation_factor&amp;oldid=878147754">https://en.wikipedia.org/w/index.php?title=Variance_inflation_factor&amp;oldid=878147754</a>.</p>
+</div>
+</div>
+</div>
+</div>

@@ -16,7 +16,7 @@ output:
     toc: no
     fig_width: 5
     fig_height: 5
-link-citations: true    
+link-citations: true
 bibliography: ../../static/bibtex/crime_rate_chalmers.bib
 csl: ../../static/bibtex/acm-sig-proceedings.csl     
 ---
@@ -506,7 +506,7 @@ NA
 </tbody>
 </table>
 <p>In the conditional plot we can see the values of the log of population vs the crime rate for each of the regions. The bottom left panel is the West, bottom right is the northeast, top left is the midwest and top right is the south. There seems to be a slightly smaller slope in the West panel, but overall it is not clear that the interactions are needed.</p>
-<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-7-1.png" width="480" /></p>
+<p><img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-7-1.png" width="480" /></p>
 <p>Our original cross validation was performed on data that was not centered (mean subtracted off). Centering can improve the standard errors and thus the p-values of the estimates but the predictions for the new values are the same. Since our final model does not include the interactions, we decided against centering the data.
 When building the interaction models we included all of the interactions (for region and then for all variables) and then backward selected. We did this twice: once with the data centered and once without the data being centered. While this does not make a difference for the estimate, the standard errors decrease in the centered model. That made the backwards selection algorithm stop earlier when we centered the data, and thus included more of the interaction variables. Again, at this point we checked to make sure that no interaction effects were included when a main effect was dropped. When including these centered models in our cross validation we found that they performed worse than the backward selection models on the original (non-standardized) data so we chose not to include them in our analysis.</p>
 </div>
@@ -966,7 +966,7 @@ So if we kept all other variables constant, and increased <span class="math inli
 \]</span>
 That is, we would expect the crimes to increase by 7.8%. We can confirm this for the predicted crimes per 1000 people while holding all other variables at the means. When <span class="math inline">\(x_{poors} = 10\)</span>, then the predicted crime rate is 72.18. The predicted crime from for <span class="math inline">\(x_{poors} = 12\)</span> is 77.88. The ratio of these values is 1.079 which is what we found from the coefficient interpretation.</p>
 <p>It is also useful to look at how the predicts change as one of the variables varies. We set all of the variables involved in the regression to the means and then only varied the percentage of poor from 1 to 37, which is approximately the range found in the training set. It is easier to see how the crime rate changes from this graph due to the poor percentage changing than just the estimated coefficients.
-<img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-12-1.png" width="480" /></p>
+<img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-12-1.png" width="480" /></p>
 </div>
 </div>
 <div id="cross-validation" class="section level2">
@@ -1460,7 +1460,7 @@ regionsouth
 </tbody>
 </table>
 <p>We find it easier to understand some of these estimates with plots. Below we show how the predicted crime rates change when holding all variables constant (keeping the other variables at the mean) while varying only the population. We range the population from the minimum 100043 to the maximum 8863164.</p>
-<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-18-1.png" width="480" /></p>
+<p><img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-18-1.png" width="480" /></p>
 </div>
 </div>
 <div id="conclusion" class="section level2">
@@ -1575,7 +1575,7 @@ The most predictive variables in the data set were the population, the percentag
 <h3>Model Diagnostics</h3>
 <div id="studentized-residuals" class="section level4">
 <h4>Studentized Residuals</h4>
-<img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-20-1.png" width="480" />
+<img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-20-1.png" width="480" />
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -1731,7 +1731,7 @@ Kings county in NY is extremely far away from other points. We compared models w
 </div>
 <div id="dfbeta-on-continuous-coefficients" class="section level3">
 <h3>DFBETA on continuous coefficients</h3>
-<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-21-1.png" width="768" /></p>
+<p><img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-21-1.png" width="768" /></p>
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>
 <span id="tab:unnamed-chunk-22">Table 10: </span>High &gt; 2/sqrt(n) DFBETA values
@@ -2034,7 +2034,7 @@ We see that Kings (NY), influences many of the coefficients and has some of the 
 It is by far the most influential and extreme point in the data.</p>
 <div id="model-diagnostic-plots" class="section level4">
 <h4>Model Diagnostic Plots</h4>
-<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-23-1.png" width="480" /></p>
+<p><img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-23-1.png" width="480" /></p>
 <p>We can see from the diagnostic plots that the residuals and fitted values are approximately symmetric and the residuals don’t appear to be increasing or decreasing as the fitted values increases.
 The normal QQ plot shows that we have larger tails than we would like.
 The estimates for the parameters do not dependent on it following a normal distribution but our p-values should be interpreted a little pessimistically.
@@ -2046,12 +2046,12 @@ It is still marked by the Residuals vs Leverage plot as an issue as its residual
 </div>
 <div id="correlations" class="section level3">
 <h3>Correlations</h3>
-<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-25-1.png" width="768" />
+<p><img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-25-1.png" width="768" />
 This clustered distance matrix was how we selected which variables to remove from the model. The blue variables are negatively correlated with each other and the red variables are positively correlated.</p>
 </div>
 <div id="outliers-1" class="section level3">
 <h3>Outliers</h3>
-<p><img src="/post/2019-2-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-26-1.png" width="480" />
+<p><img src="/post/2019-02-25-census-crime-rate-prediction_files/figure-html/unnamed-chunk-26-1.png" width="480" />
 We can see that Kings county is high for its region and overall.</p>
 </div>
 <div id="references" class="section level3 unnumbered">

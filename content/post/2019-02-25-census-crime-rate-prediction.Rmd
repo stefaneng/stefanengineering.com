@@ -16,7 +16,7 @@ output:
     toc: no
     fig_width: 5
     fig_height: 5
-link-citations: true    
+link-citations: true
 bibliography: ../../static/bibtex/crime_rate_chalmers.bib
 csl: ../../static/bibtex/acm-sig-proceedings.csl     
 ---

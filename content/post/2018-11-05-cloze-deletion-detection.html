@@ -10,6 +10,13 @@ tags:
   - python
   - keras
   - neural-networks
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+aliases:
+  - /1990-1992-census-crime-prediction
 bibliography: ../../static/bibtex/cloze_deletion.bib
 csl: ../../static/bibtex/acm-sig-proceedings.csl     
 ---
@@ -20,9 +27,9 @@ csl: ../../static/bibtex/acm-sig-proceedings.csl
 <h1>Introduction</h1>
 <p>A cloze deletion test is a form of language test where a sentence (or
 paragraph) is given to the test taker with blanks for missing words
-<span class="citation">[8]</span>. The student is expected to fill in a “correct” word in the
+<span class="citation">[7]</span>. The student is expected to fill in a “correct” word in the
 blanks.</p>
-<p>Example from Wikipedia’s article on cloze deletion <span class="citation">[9]</span>:</p>
+<p>Example from Wikipedia’s article on cloze deletion <span class="citation">[8]</span>:</p>
 <blockquote>
 <p>Today, I went to the ____ and bought some milk and eggs.</p>
 </blockquote>
@@ -30,15 +37,11 @@ blanks.</p>
 etc.</p>
 <p>Cloze deletion tests can be useful for language learners. These type of
 flashcards are described in great detail in Gabriel Wyner’s book, Fluent
-Forever <span class="citation">[12]</span>. The idea is to include a cloze deletion
+Forever <span class="citation">[11]</span>. The idea is to include a cloze deletion
 sentence, definition, a picture, other possibly relevant information
 (part of speech, conjugation, etc.). An example of these flash cards can
-be seen in Figure <a href="#fig:flashcard" reference-type="ref" reference="fig:flashcard">1</a> on page .</p>
-<div class="figure">
-<img src="../../static/cloze_deletion_files/cloze_example.png" alt="Anki Flashcard" id="fig:flashcard" />
-<p class="caption">Anki
-Flashcard<span label="fig:flashcard"></span></p>
-</div>
+be seen in Figure <a href="#fig:flashcard" reference-type="ref" reference="fig:flashcard">1</a> on page .</p>
+<p><img src="/post/2018-11-05-cloze-deletion-detection_files/cloze_example.png" /></p>
 <p>After using this method of studying for some time, I have found that
 certain sentences work better than other for remembering new vocabulary
 and grammar. Long sentences tended to be difficult to remember and were
@@ -64,14 +67,13 @@ to predict. Then I explore tuning the dropout parameter to see how
 overfitting can be improved. Finally the predictions are analyzed to see
 which sentences are easy to predict.</p>
 </div>
-<div id="sec:datasets" class="section level1">
+<div id="data-sets" class="section level1">
 <h1>Data Sets</h1>
 <div class="figure">
-<img src="../../static/cloze_deletion_files/word_count_density.png" alt="Sentence Word Count Density for 8 Sidor and Göteborgs-Posten 2013" />
+<img src="/post/2018-11-05-cloze-deletion-detection_files/word_count_density.png" alt="Sentence Word Count Density for 8 Sidor and Göteborgs-Posten 2013" />
 <p class="caption">Sentence Word Count Density for 8 Sidor and Göteborgs-Posten
 2013</p>
 </div>
-<p><span id="fig:word_density" label="fig:word_density"><span class="math display">\[fig:word\_density\]</span></span></p>
 <p>The data from Språkbanken comes in XML form <span class="citation">[4]</span>. The two
 data sets I compared were 8 Sidor (from 2002/11/14 to 2017/10/09) and
 Göteborgs-Posten (from 2013). 8 Sidor and Göteborgs-Posten differ in
@@ -79,7 +81,7 @@ their goals as news sites. 8 Sidor describe itself on its website as
 "en nyhetstidning på lättläst svenska." <span class="citation">[1]</span>, which means that it
 is a newspaper in easy to read Swedish. We can see this reflected in
 Table <a href="#tab:possum" reference-type="ref" reference="tab:possum"><span class="math display">\[tab:possum\]</span></a> on page . Göteborgs-Posten (GP) is a more
-traditional <span class="citation">[11]</span>. Example sentence from the two 8 Sidor is,</p>
+traditional <span class="citation">[10]</span>. Example sentence from the two 8 Sidor is,</p>
 <p>and an example from Göteborgs-Posten is</p>
 <p>We can see from this example that Göteborgs-Posten uses more complex
 sentence structures and more advanced vocabulary. This is also reflected
@@ -226,11 +228,8 @@ future data.</p>
 <p>I went to the <span class="math inline">\(\rule{1cm}{0.15mm}\)</span> and swam 10 laps.</p>
 <p>Using a bidirectional LSTM will allow the model to use the information
 from later in the sequence which could potentially improve the
-performance on sentences like this example. <span class="citation">[6]</span></p>
-<div class="figure">
-<img src="../../static/cloze_deletion_files/RNN_BRNN.png" alt="RNN compared with Bidirectional RNN [5]" />
-<p class="caption">RNN compared with Bidirectional RNN <span class="citation">[5]</span></p>
-</div>
+performance on sentences like this example. <span class="citation">[5]</span></p>
+<p><img src="/post/2018-11-05-cloze-deletion-detection_files/RNN_BRNN.png" /></p>
 <p><span id="fig:rnn_brnn" label="fig:rnn_brnn"><span class="math display">\[fig:rnn\_brnn\]</span></span></p>
 <div id="sec:model_config" class="section level2">
 <h2>Model Configuration</h2>
@@ -243,8 +242,8 @@ prediction word. Any word out of vocabulary was replaced with <em>UNK</em>, and
 if the out of vocabulary word was found in either the before window, the
 word, or the after window the training example was discarded. This
 resulted in <span class="math inline">\(472,934\)</span> training examples.</p>
-<p><img src="../../static/cloze_deletion_files/atta_sample_lstm.png" title="fig:" alt="LSTM and Bidirectional LSTM Models" />
-<img src="../../static/cloze_deletion_files/atta_sample_blstm.png" title="fig:" alt="LSTM and Bidirectional LSTM Models" /></p>
+<p><img src="/post/2018-11-05-cloze-deletion-detection_files/atta_sample_lstm.png" title="fig:" />
+<img src="/post/2018-11-05-cloze-deletion-detection_files/atta_sample_blstm.png" title="fig:" /></p>
 <p><span id="fig:compare_lstm" label="fig:compare_lstm"><span class="math display">\[fig:compare\_lstm\]</span></span></p>
 <p>The models were identical apart from the LSTM layer being bidirectional
 which can be seen in Figure
@@ -258,7 +257,7 @@ token), with a softmax activation. The models were trained with the
 <em>Adam</em> optimizer with 30 epochs and batch size 64. The loss function is
 categorical cross entropy. The categorical cross entropy is a sum of
 each of the individual cross entropy results for each category
-<span class="citation">[10]</span>.
+<span class="citation">[9]</span>.
 <span class="math display">\[H(y, \hat{y}) - \frac{1}{n} \sum_{i = 1}^{n} \sum_{j = 1}^{m} y_{i,j} \log(\hat{y}_{i,j})\]</span>
 Where <span class="math inline">\(y\)</span> is a vector of the true values, and <span class="math inline">\(\hat{y}\)</span> are our
 predictions. We define <span class="math inline">\(n\)</span> as the number of examples, <span class="math inline">\(m\)</span> as the number
@@ -271,7 +270,7 @@ we do not have more than one category.</p>
 </div>
 <div id="results" class="section level2">
 <h2>Results</h2>
-<p><img src="../../static/cloze_deletion_files/blstm_compare_loss.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between LSTM and Bidirectional LSTM Models" /> <img src="../../static/cloze_deletion_files/blstm_compare_acc.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between LSTM and Bidirectional LSTM Models" /></p>
+<p><img src="/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_loss.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between LSTM and Bidirectional LSTM Models" /> <img src="/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_acc.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between LSTM and Bidirectional LSTM Models" /></p>
 <p><span id="fig:lstm_compare_loss" label="fig:lstm_compare_loss"><span class="math display">\[fig:lstm\_compare\_loss\]</span></span></p>
 <p>Figure
 <a href="#fig:lstm_compare_loss" reference-type="ref" reference="fig:lstm_compare_loss"><span class="math display">\[fig:lstm\_compare\_loss\]</span></a> shows the accuracy and the
@@ -287,14 +286,14 @@ so than the standard LSTM model.</p>
 <h1>Improving Overfitting</h1>
 <p>One way to reduce overfitting is to use dropout. Dropout removes random
 nodes from a neural network while training to prevent the network from
-learning too much from the noise in the dataset <span class="citation">[7]</span>.
+learning too much from the noise in the dataset <span class="citation">[6]</span>.
 In the LSTM and Bidirectional LSTM comparison a dropout of <span class="math inline">\(0.1\)</span> was
 used for the inputs to the LSTM. To combat overfitting, the
 Bidirectional LSTM model model was compared with dropout rates <span class="math inline">\(0.2\)</span></p>
 <div id="dropout-comparison" class="section level2">
 <h2>Dropout Comparison</h2>
 <div class="figure">
-<img src="../../static/cloze_deletion_files/dropout_compare_plot.png" alt="Comparing dropout values of 0.2, 0.4, 0.6 and 0.8 on Bidirectional LSTM Model" />
+<img src="/post/2018-11-05-cloze-deletion-detection_files/dropout_compare_plot.png" alt="Comparing dropout values of 0.2, 0.4, 0.6 and 0.8 on Bidirectional LSTM Model" />
 <p class="caption">Comparing dropout values of 0.2, 0.4, 0.6 and 0.8 on Bidirectional
 LSTM Model</p>
 </div>
@@ -371,7 +370,7 @@ represent the standard deviation within the each word count group. We
 can see from this graph that very short sentences are hard to predict
 (<span class="math inline">\(x &lt; 5\)</span>) as well as large sentences (<span class="math inline">\(x &gt; 25\)</span>).</p>
 <div class="figure">
-<img src="../../static/cloze_deletion_files/cross_entropy_word_count.png" alt="Average Cross Entropy for each word count group" />
+<img src="/post/2018-11-05-cloze-deletion-detection_files/cross_entropy_word_count.png" alt="Average Cross Entropy for each word count group" />
 <p class="caption">Average Cross Entropy for each word count
 group</p>
 </div>
@@ -520,7 +519,7 @@ tokenizer was the same for each data set but the models are trained
 individually. The data was fit with 30 epochs.</p>
 <div id="results-1" class="section level2">
 <h2>Results</h2>
-<p><img src="../../static/cloze_deletion_files/compare_atta_gp_loss.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" /> <img src="../../static/cloze_deletion_files/compare_atta_gp_acc.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" /></p>
+<p><img src="/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_loss.png" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" /> <img src="/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_acc.png" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" /></p>
 <p><span id="fig:atta_gp2013_compare" label="fig:atta_gp2013_compare"><span class="math display">\[fig:atta\_gp2013\_compare\]</span></span></p>
 <p>We can see in
 Figure <a href="#fig:atta_gp2013_compare" reference-type="ref" reference="fig:atta_gp2013_compare"><span class="math display">\[fig:atta\_gp2013\_compare\]</span></a> the cross entropy and the accuracy
@@ -577,29 +576,26 @@ would potentially give better example sentences.</p>
 <div id="ref-spraakbanken">
 <p>[4] Göteborgs universitet 2018. Språkbanken. <a href="https://spraakbanken.gu.se">https://spraakbanken.gu.se</a>.</p>
 </div>
-<div id="ref-brnn">
-<p>[5] Incfk8 2015. RNN BRNN. <a href="https://commons.wikimedia.org/wiki/File:RNN_BRNN.png">https://commons.wikimedia.org/wiki/File:RNN_BRNN.png</a>.</p>
-</div>
 <div id="ref-ngcoursera">
-<p>[6] Ng, A. 2018. Sequence models – Coursera. <a href="https://www.coursera.org/learn/nlp-sequence-models">https://www.coursera.org/learn/nlp-sequence-models</a>.</p>
+<p>[5] Ng, A. 2018. Sequence models – Coursera. <a href="https://www.coursera.org/learn/nlp-sequence-models">https://www.coursera.org/learn/nlp-sequence-models</a>.</p>
 </div>
 <div id="ref-dropout_srivastava">
-<p>[7] Srivastava, N. et al. 2014. Dropout: A simple way to prevent neural networks from overfitting. <em>Journal of Machine Learning Research</em>. 15, (2014), 1929–1958.</p>
+<p>[6] Srivastava, N. et al. 2014. Dropout: A simple way to prevent neural networks from overfitting. <em>Journal of Machine Learning Research</em>. 15, (2014), 1929–1958.</p>
 </div>
 <div id="ref-clozeproc">
-<p>[8] Taylor, W.L. 1953. “Cloze procedure”: A new tool for measuring readability. <em>Journalism Bulletin</em>. 30, 4 (1953), 415–433. DOI:<a href="https://doi.org/10.1177/107769905303000401">https://doi.org/10.1177/107769905303000401</a>.</p>
+<p>[7] Taylor, W.L. 1953. “Cloze procedure”: A new tool for measuring readability. <em>Journalism Bulletin</em>. 30, 4 (1953), 415–433. DOI:<a href="https://doi.org/10.1177/107769905303000401">https://doi.org/10.1177/107769905303000401</a>.</p>
 </div>
 <div id="ref-wiki:clozetest">
-<p>[9] Wikipedia contributors 2018. Cloze test — Wikipedia, the free encyclopedia. <a href="https://en.wikipedia.org/w/index.php?title=Cloze_test&amp;oldid=847324700">https://en.wikipedia.org/w/index.php?title=Cloze_test&amp;oldid=847324700</a>.</p>
+<p>[8] Wikipedia contributors 2018. Cloze test — Wikipedia, the free encyclopedia. <a href="https://en.wikipedia.org/w/index.php?title=Cloze_test&amp;oldid=847324700">https://en.wikipedia.org/w/index.php?title=Cloze_test&amp;oldid=847324700</a>.</p>
 </div>
 <div id="ref-wiki:crossentropy">
-<p>[10] Wikipedia contributors 2018. Cross entropy — Wikipedia, the free encyclopedia.</p>
+<p>[9] Wikipedia contributors 2018. Cross entropy — Wikipedia, the free encyclopedia.</p>
 </div>
 <div id="ref-wiki:gp">
-<p>[11] Wikipedia contributors 2018. Göteborgs-posten — Wikipedia, the free encyclopedia. <a href="https://en.wikipedia.org/w/index.php?title=G%C3%B6teborgs-Posten&amp;oldid=865127708">https://en.wikipedia.org/w/index.php?title=G%C3%B6teborgs-Posten&amp;oldid=865127708</a>.</p>
+<p>[10] Wikipedia contributors 2018. Göteborgs-posten — Wikipedia, the free encyclopedia. <a href="https://en.wikipedia.org/w/index.php?title=G%C3%B6teborgs-Posten&amp;oldid=865127708">https://en.wikipedia.org/w/index.php?title=G%C3%B6teborgs-Posten&amp;oldid=865127708</a>.</p>
 </div>
 <div id="ref-fluentforever">
-<p>[12] Wyner, G. 2014. <em>Fluent forever: How to learn any language fast and never forget it</em>. Harmony Books.</p>
+<p>[11] Wyner, G. 2014. <em>Fluent forever: How to learn any language fast and never forget it</em>. Harmony Books.</p>
 </div>
 </div>
 </div>

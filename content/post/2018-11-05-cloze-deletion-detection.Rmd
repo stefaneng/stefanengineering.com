@@ -10,6 +10,13 @@ tags:
   - python
   - keras
   - neural-networks
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+aliases:
+  - /1990-1992-census-crime-prediction
 bibliography: ../../static/bibtex/cloze_deletion.bib
 csl: ../../static/bibtex/acm-sig-proceedings.csl     
 ---
@@ -34,11 +41,10 @@ flashcards are described in great detail in Gabriel Wyner's book, Fluent
 Forever [@fluentforever]. The idea is to include a cloze deletion
 sentence, definition, a picture, other possibly relevant information
 (part of speech, conjugation, etc.). An example of these flash cards can
-be seen in Figure [1](#fig:flashcard){reference-type="ref"
+be seen in Figure [1](#fig:flashcard){reference-type="ref"
 reference="fig:flashcard"} on page .
 
-![Anki
-Flashcard[]{label="fig:flashcard"}](../../static/cloze_deletion_files/cloze_example.png){#fig:flashcard}
+![](/post/2018-11-05-cloze-deletion-detection_files/cloze_example.png)
 
 After using this method of studying for some time, I have found that
 certain sentences work better than other for remembering new vocabulary
@@ -68,13 +74,11 @@ to predict. Then I explore tuning the dropout parameter to see how
 overfitting can be improved. Finally the predictions are analyzed to see
 which sentences are easy to predict.
 
-Data Sets {#sec:datasets}
+Data Sets 
 =========
 
 ![Sentence Word Count Density for 8 Sidor and Göteborgs-Posten
-2013](../../static/cloze_deletion_files/word_count_density.png)
-
-[\[fig:word\_density\]]{#fig:word_density label="fig:word_density"}
+2013](/post/2018-11-05-cloze-deletion-detection_files/word_count_density.png)
 
 The data from Språkbanken comes in XML form [@spraakbanken]. The two
 data sets I compared were 8 Sidor (from 2002/11/14 to 2017/10/09) and
@@ -181,7 +185,7 @@ Using a bidirectional LSTM will allow the model to use the information
 from later in the sequence which could potentially improve the
 performance on sentences like this example. [@ngcoursera]
 
-![RNN compared with Bidirectional RNN [@brnn]](../../static/cloze_deletion_files/RNN_BRNN.png)
+![](/post/2018-11-05-cloze-deletion-detection_files/RNN_BRNN.png)
 
 [\[fig:rnn\_brnn\]]{#fig:rnn_brnn label="fig:rnn_brnn"}
 
@@ -198,8 +202,8 @@ if the out of vocabulary word was found in either the before window, the
 word, or the after window the training example was discarded. This
 resulted in $472,934$ training examples.
 
-![LSTM and Bidirectional LSTM Models](../../static/cloze_deletion_files/atta_sample_lstm.png "fig:")
-![LSTM and Bidirectional LSTM Models](../../static/cloze_deletion_files/atta_sample_blstm.png "fig:")
+![](/post/2018-11-05-cloze-deletion-detection_files/atta_sample_lstm.png "fig:")
+![](/post/2018-11-05-cloze-deletion-detection_files/atta_sample_blstm.png "fig:")
 
 [\[fig:compare\_lstm\]]{#fig:compare_lstm label="fig:compare_lstm"}
 
@@ -231,9 +235,9 @@ Results
 -------
 
 ![Comparing accuracy and cross-entropy loss between LSTM and
-Bidirectional LSTM Models](../../static/cloze_deletion_files/blstm_compare_loss.png "fig:") ![Comparing
+Bidirectional LSTM Models](/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_loss.png "fig:") ![Comparing
 accuracy and cross-entropy loss between LSTM and Bidirectional LSTM
-Models](../../static/cloze_deletion_files/blstm_compare_acc.png "fig:")
+Models](/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_acc.png "fig:")
 
 [\[fig:lstm\_compare\_loss\]]{#fig:lstm_compare_loss
 label="fig:lstm_compare_loss"}
@@ -262,7 +266,7 @@ Dropout Comparison
 ------------------
 
 ![Comparing dropout values of 0.2, 0.4, 0.6 and 0.8 on Bidirectional
-LSTM Model](../../static/cloze_deletion_files/dropout_compare_plot.png)
+LSTM Model](/post/2018-11-05-cloze-deletion-detection_files/dropout_compare_plot.png)
 
 [\[fig:dropout\_compare\_loss\]]{#fig:dropout_compare_loss
 label="fig:dropout_compare_loss"}
@@ -324,7 +328,7 @@ can see from this graph that very short sentences are hard to predict
 ($x < 5$) as well as large sentences ($x > 25$).
 
 ![Average Cross Entropy for each word count
-group](../../static/cloze_deletion_files/cross_entropy_word_count.png)
+group](/post/2018-11-05-cloze-deletion-detection_files/cross_entropy_word_count.png)
 
 [\[fig:word\_count\_entropy\]]{#fig:word_count_entropy
 label="fig:word_count_entropy"}
@@ -420,9 +424,9 @@ Results
 -------
 
 ![Comparing accuracy and cross-entropy loss between 8 Sidor and GP
-2013](../../static/cloze_deletion_files/compare_atta_gp_loss.png "fig:") ![Comparing accuracy and
+2013](/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_loss.png) ![Comparing accuracy and
 cross-entropy loss between 8 Sidor and GP
-2013](../../static/cloze_deletion_files/compare_atta_gp_acc.png "fig:")
+2013](/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_acc.png)
 
 [\[fig:atta\_gp2013\_compare\]]{#fig:atta_gp2013_compare
 label="fig:atta_gp2013_compare"}

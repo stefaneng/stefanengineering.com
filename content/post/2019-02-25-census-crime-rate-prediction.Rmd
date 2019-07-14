@@ -11,6 +11,8 @@ tags:
   - R
   - analysis
   - regression
+aliases:
+  - /cloze-deletion-prediction
 output:
   blogdown::html_page:
     toc: no

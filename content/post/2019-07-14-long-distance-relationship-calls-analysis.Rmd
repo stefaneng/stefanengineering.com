@@ -1,0 +1,66 @@
+---
+draft: true
+title: Long distance relationship calls analysis
+author: Stefan Eng
+date: '2019-07-14'
+slug: long-distance-relationship-calls-analysis
+categories:
+  - R
+  - personal
+tags:
+  - R
+  - analysis
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+library(ggplot2)
+library(lubridate)
+library(sessioninfo)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# My favorite theme
+
+theme_set(ggplot2::theme_minimal(base_size = 15, base_family = "Arial"))
+
+move_date <- date("2018-08-14")
+voice_port <- date("2016-05-24")
+first_date <- date("2016-02-14")
+
+andrea_df <- readRDS('~/statistics/hangouts_analysis/data/processed_data/andrea_voice_hangouts.rds')
+```
+
+## Introduction
+I have been together with my girlfriend for about three and a half years now.
+A few months after we started dating, I switched my telephone number over to Google Voice (if anyone else is interested in this, see the [link here](https://support.google.com/voice/answer/1065667#xferin)).
+A side effect of this is that I can access my text and call data from practically our entire relationship.
+In September 2018, I started a Master's program in statistics at Gothenburg University, and have been continuing our relationship long-distance.
+
+## Google Voice/Hangouts
+Overall it has been a good experience and I can keep my same number in whatever country I am in.
+As with other Google services, you can download your own data from [takeout.google.com](https://takeout.google.com/settings/takeout).
+
+
+### Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

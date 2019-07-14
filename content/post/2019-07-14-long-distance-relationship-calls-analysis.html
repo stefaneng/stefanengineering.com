@@ -1,0 +1,86 @@
+---
+draft: true
+title: Long distance relationship calls analysis
+author: Stefan Eng
+date: '2019-07-14'
+slug: long-distance-relationship-calls-analysis
+categories:
+  - R
+  - personal
+tags:
+  - R
+  - analysis
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+---
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>I have been together with my girlfriend for about three and a half years now.
+A few months after we started dating, I switched my telephone number over to Google Voice (if anyone else is interested in this, see the <a href="https://support.google.com/voice/answer/1065667#xferin">link here</a>).
+A side effect of this is that I can access my text and call data from practically our entire relationship.
+In September 2018, I started a Master’s program in statistics at Gothenburg University, and have been continuing our relationship long-distance.</p>
+</div>
+<div id="google-voicehangouts" class="section level2">
+<h2>Google Voice/Hangouts</h2>
+<p>Overall it has been a good experience and I can keep my same number in whatever country I am in.
+As with other Google services, you can download your own data from <a href="https://takeout.google.com/settings/takeout">takeout.google.com</a>.</p>
+<div id="reproducibility" class="section level3">
+<h3>Reproducibility</h3>
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────────────────────────────────────────────
+ setting  value                       
+ version  R version 3.6.0 (2019-04-26)
+ os       macOS Mojave 10.14.3        
+ system   x86_64, darwin15.6.0        
+ ui       X11                         
+ language (EN)                        
+ collate  en_US.UTF-8                 
+ ctype    en_US.UTF-8                 
+ tz       Europe/Stockholm            
+ date     2019-07-14                  
+
+─ Packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+ package     * version date       lib source        
+ assertthat    0.2.1   2019-03-21 [1] CRAN (R 3.6.0)
+ blogdown      0.13    2019-06-11 [1] CRAN (R 3.6.0)
+ bookdown      0.11    2019-05-28 [1] CRAN (R 3.6.0)
+ cli           1.1.0   2019-03-19 [1] CRAN (R 3.6.0)
+ colorspace    1.4-1   2019-03-18 [1] CRAN (R 3.6.0)
+ crayon        1.3.4   2017-09-16 [1] CRAN (R 3.6.0)
+ digest        0.6.20  2019-07-04 [1] CRAN (R 3.6.0)
+ dplyr         0.8.0.1 2019-02-15 [1] CRAN (R 3.6.0)
+ evaluate      0.13    2019-02-12 [1] CRAN (R 3.6.0)
+ ggplot2     * 3.2.0   2019-06-16 [1] CRAN (R 3.6.0)
+ glue          1.3.1   2019-03-12 [1] CRAN (R 3.6.0)
+ gtable        0.3.0   2019-03-25 [1] CRAN (R 3.6.0)
+ htmltools     0.3.6   2017-04-28 [1] CRAN (R 3.6.0)
+ knitr         1.23    2019-05-18 [1] CRAN (R 3.6.0)
+ lazyeval      0.2.2   2019-03-15 [1] CRAN (R 3.6.0)
+ lubridate   * 1.7.4   2018-04-11 [1] CRAN (R 3.6.0)
+ magrittr      1.5     2014-11-22 [1] CRAN (R 3.6.0)
+ munsell       0.5.0   2018-06-12 [1] CRAN (R 3.6.0)
+ pillar        1.4.2   2019-06-29 [1] CRAN (R 3.6.0)
+ pkgconfig     2.0.2   2018-08-16 [1] CRAN (R 3.6.0)
+ purrr         0.3.2   2019-03-15 [1] CRAN (R 3.6.0)
+ R6            2.4.0   2019-02-14 [1] CRAN (R 3.6.0)
+ Rcpp          1.0.1   2019-03-17 [1] CRAN (R 3.6.0)
+ rlang         0.4.0   2019-06-25 [1] CRAN (R 3.6.0)
+ rmarkdown     1.12    2019-03-14 [1] CRAN (R 3.6.0)
+ scales        1.0.0   2018-08-09 [1] CRAN (R 3.6.0)
+ sessioninfo * 1.1.1   2018-11-05 [1] CRAN (R 3.6.0)
+ stringi       1.4.3   2019-03-12 [1] CRAN (R 3.6.0)
+ stringr       1.4.0   2019-02-10 [1] CRAN (R 3.6.0)
+ tibble        2.1.3   2019-06-06 [1] CRAN (R 3.6.0)
+ tidyselect    0.2.5   2018-10-11 [1] CRAN (R 3.6.0)
+ withr         2.1.2   2018-03-15 [1] CRAN (R 3.6.0)
+ xfun          0.6     2019-04-02 [1] CRAN (R 3.6.0)
+ yaml          2.2.0   2018-07-25 [1] CRAN (R 3.6.0)
+
+[1] /Library/Frameworks/R.framework/Versions/3.6/Resources/library</code></pre>
+</div>
+</div>

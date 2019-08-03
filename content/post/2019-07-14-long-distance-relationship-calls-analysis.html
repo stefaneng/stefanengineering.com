@@ -1,5 +1,4 @@
 ---
-draft: true
 title: Long distance relationship calls analysis
 author: Stefan Eng
 date: '2019-07-14'
@@ -48,24 +47,39 @@ It was tough being apart during these times so we spent more time on video calls
 Figure 3: Histogram of hours spent on each conversation
 </p>
 </div>
-<p>In Figure <a href="#fig:call-duration-time">3</a> a histogram of the hours spent on each call are shown.</p>
-<div id="do-we-talk-more-on-certain-days" class="section level3">
-<h3>Do we talk more on certain days?</h3>
-<p><img src="/post/2019-07-14-long-distance-relationship-calls-analysis_files/figure-html/weekday-hours-1.png" width="798.72" /></p>
+<p>In Figure <a href="#fig:call-duration-time">3</a> a histogram of the hours spent on each call are shown.
+The distribution is right-skewed with quite a few really long conversations.
+Note that this does not take into account conversations that were split into multiple calls.</p>
+<div class="figure"><span id="fig:weekday-hours"></span>
+<img src="/post/2019-07-14-long-distance-relationship-calls-analysis_files/figure-html/weekday-hours-1.png" alt="Hours spent per week" width="798.72" />
+<p class="caption">
+Figure 4: Hours spent per week
+</p>
 </div>
-<div id="reproducibility" class="section level3">
-<h3>Reproducibility</h3>
+<p>I was curious if there was a big difference in the hours spent on the phone by week day. In Figure <a href="#fig:weekday-hours">4</a> we can see that the weekdays are less than the weekends which is fairly expected. Wednesdays and Thursdays were a bit of a mystery as to why they were less than the other days. My girlfriend saw the graph and reminded me that I had an 8am course on Thursdays and Fridays a few quarters (Wednesday and Thursday night for her).</p>
+</div>
+<div id="closing-thoughts" class="section level2">
+<h2>Closing Thoughts</h2>
+<p>Overall I am really happy with the way that our relationship has progressed.
+Before leaving I never thought I would describe it as progressing when we were not together.
+It has been a great learning experience and I have learned to express myself better in our conversations.
+Of course it is not easy being away from the one you love.
+It takes a lot of work and hours as you can see from the visualizations.
+The effort makes a huge difference though and it is possible to keep up and even improve a relationship while long distance.</p>
+</div>
+<div id="reproducibility" class="section level2">
+<h2>Reproducibility</h2>
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────────────────────────────────────────────
  setting  value                       
  version  R version 3.6.0 (2019-04-26)
- os       macOS Mojave 10.14.3        
+ os       macOS Mojave 10.14.5        
  system   x86_64, darwin15.6.0        
  ui       X11                         
  language (EN)                        
  collate  en_US.UTF-8                 
  ctype    en_US.UTF-8                 
  tz       Europe/Stockholm            
- date     2019-07-14                  
+ date     2019-08-03                  
 
 ─ Packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────
  package     * version date       lib source        
@@ -107,5 +121,4 @@ Figure 3: Histogram of hours spent on each conversation
  yaml          2.2.0   2018-07-25 [1] CRAN (R 3.6.0)
 
 [1] /Library/Frameworks/R.framework/Versions/3.6/Resources/library</code></pre>
-</div>
 </div>

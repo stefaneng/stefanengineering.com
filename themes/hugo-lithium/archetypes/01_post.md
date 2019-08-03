@@ -17,6 +17,7 @@ csl: ../../static/bibtex/acm-sig-proceedings.csl
 ## Load frequently used packages for blog posts
 library(sessioninfo) # for session_info()
 library(ggplot2)
+library(here)
 
 ## For R images to display well in the RSS feed (disable for local preview)
 # knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')

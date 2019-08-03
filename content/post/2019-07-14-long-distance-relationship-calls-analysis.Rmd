@@ -1,5 +1,4 @@
 ---
-draft: true
 title: Long distance relationship calls analysis
 author: Stefan Eng
 date: '2019-07-14'
@@ -184,11 +183,10 @@ ggplot(andrea_dist_df) +
 ```
 
 In Figure \@ref(fig:call-duration-time) a histogram of the hours spent on each call are shown.
+The distribution is right-skewed with quite a few really long conversations.
+Note that this does not take into account conversations that were split into multiple calls.
 
-
-### Do we talk more on certain days?
-
-```{r weekday-hours}
+```{r weekday-hours, fig.cap="Hours spent per week"}
 andrea_dist_df$weekday <- wday(andrea_dist_df$pst_starttime, label = TRUE, abbr = FALSE, week_start = 1)
 andrea_dist_df %>%
   group_by(weekday) %>%
@@ -206,7 +204,19 @@ ggplot(.) +
   )
 ```
 
-### Reproducibility
+I was curious if there was a big difference in the hours spent on the phone by week day. In Figure \@ref(fig:weekday-hours) we can see that the weekdays are less than the weekends which is fairly expected. Wednesdays and Thursdays were a bit of a mystery as to why they were less than the other days. My girlfriend saw the graph and reminded me that I had an 8am course on Thursdays and Fridays a few quarters (Wednesday and Thursday night for her).
+
+## Closing Thoughts
+
+Overall I am really happy with the way that our relationship has progressed.
+Before leaving I never thought I would describe it as progressing when we were not together.
+It has been a great learning experience and I have learned to express myself better in our conversations.
+Of course it is not easy being away from the one you love.
+It takes a lot of work and hours as you can see from the visualizations.
+The effort makes a huge difference though and it is possible to keep up and even improve a relationship while long distance.
+
+
+## Reproducibility
 
 ```{r reproducibility, echo = FALSE}
 ## Reproducibility info

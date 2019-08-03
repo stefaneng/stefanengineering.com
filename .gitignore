@@ -7,3 +7,4 @@ themes/hugo-lithium/archetypes/*.html
 *.tex
 *.log
 blogdown/
+no_commit/

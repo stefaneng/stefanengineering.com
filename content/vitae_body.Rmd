@@ -22,10 +22,12 @@ citep(bib["cresst_eng2018"])
 ## Work Experience
 
 ### Scientific Computing @ [Novartis](https://www.novartis.com/)
-*June 2019 - Current*
+*June 2019 - August 2019*
 
-  - Internship in the Scientific Computing and Consulting (SCC) group within Biostatistics at Novartis in Basel, Switzerland.
-  - Building R Shiny web applications for interactive data visualization and exploration of clinical trial data.
+  - 3 month internship in the Scientific Computing and Consulting (SCC) group within Biostatistics at Novartis in Basel, Switzerland.
+  - Developed a TTE (time-to-event/survival analysis) R shiny application for oncological clinical trial data with support for subgroup and subpopulation analysis.
+  - Created a patient subpopulation creation and ad-hoc listing R shiny app for medical writers and clinicians to faster query specific patients from CDISC-ADaM data sets.
+  - Analyzed results of protocol amendments of clinical trials.
   
 ### Programmer/Analyst @ [CRESST/UCLA](http://cresst.org) 
 *August 2016 - June 2018*

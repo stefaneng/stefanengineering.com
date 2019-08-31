@@ -77,7 +77,9 @@ The full application is available here: https://github.com/stefaneng/Shiny-Dynam
 We first need a R markdown template that we can use for the report generation.
 We want to print out some data set using the `pander` package to make nicer formatted tables.
 
-<script src="http://gist-it.appspot.com/http://github.com/stefaneng/Shiny-Dynamic-Report-Generation/blob/master/template.Rmd"></script>
+```{r, echo = F}
+cat(readLines('https://raw.githubusercontent.com/stefaneng/Shiny-Dynamic-Report-Generation/master/template.Rmd'), sep = '\n')
+```
 
 To generate the report from Shiny, we use a [downloadHandler](https://shiny.rstudio.com/reference/shiny/0.14/downloadHandler.html) and render the template using [`rmarkdown::render`](https://www.rdocumentation.org/packages/rmarkdown/versions/1.15/topics/render).
 This is called each time the user clicks the download button. In the [full example on github](https://github.com/stefaneng/Shiny-Dynamic-Report-Generation), the user can select a data set to include in the report which is more realistic.

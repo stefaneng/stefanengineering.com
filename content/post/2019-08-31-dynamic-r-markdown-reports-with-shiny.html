@@ -53,7 +53,25 @@ My approach is to create a template R markdown file and dynamically generate it 
 <p>The full application is available here: <a href="https://github.com/stefaneng/Shiny-Dynamic-Report-Generation" class="uri">https://github.com/stefaneng/Shiny-Dynamic-Report-Generation</a></p>
 <p>We first need a R markdown template that we can use for the report generation.
 We want to print out some data set using the <code>pander</code> package to make nicer formatted tables.</p>
-<script src="http://gist-it.appspot.com/http://github.com/stefaneng/Shiny-Dynamic-Report-Generation/blob/master/template.Rmd"></script>
+<pre><code>---
+title: &quot;Example Template&quot;
+author: &quot;Stefan Eng&quot;
+date: &quot;8/7/2019&quot;
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(pander)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, results=&#39;asis&#39;}
+panderOptions(&#39;knitr.auto.asis&#39;, FALSE)
+for(d in datasets) {
+  pander::pander(d, split.table=120)
+}
+```</code></pre>
 <p>To generate the report from Shiny, we use a <a href="https://shiny.rstudio.com/reference/shiny/0.14/downloadHandler.html">downloadHandler</a> and render the template using <a href="https://www.rdocumentation.org/packages/rmarkdown/versions/1.15/topics/render"><code>rmarkdown::render</code></a>.
 This is called each time the user clicks the download button. In the <a href="https://github.com/stefaneng/Shiny-Dynamic-Report-Generation">full example on github</a>, the user can select a data set to include in the report which is more realistic.
 The example given is the simplest to get you going on generating your own dynamic reports.</p>

@@ -1,0 +1,92 @@
+---
+title: Dynamic R Markdown Reports with Shiny
+author: Stefan Eng
+date: '2019-08-31'
+slug: dynamic-r-markdown-reports-with-shiny
+categories:
+  - R
+  - development
+tags:
+  - shiny
+  - rmarkdown
+  - data-science
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(sessioninfo) # for session_info()
+library(here)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+```
+
+TL;DR here is an example application. See the explaination below.
+
+```{r, eval=FALSE}
+library(shiny)
+
+ui <- fluidPage(
+  downloadButton('download')
+)
+
+server <- function(input, output) {
+  output$download <- downloadHandler(
+    filename = "listing.pdf",
+    content = function(f) {
+      # Create a new empty environment
+      # This allows us to pass in only the relevant variables into the report
+      e <- new.env()
+      # Pass two data sets into our template
+      e$datasets <- list(mtcars, iris)
+      # Render the document
+      rmarkdown::render('template.Rmd',
+                        output_format = rmarkdown::pdf_document(),
+                        output_file=f,
+                        envir = e)
+    }
+  )
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+A common issue I have run into is dynamically generating reports.
+In particular, during my summer at Novartis there was lots of demands for report listings that could be generated on the fly from a Shiny application.
+Using the great [rmarkdown](https://github.com/rstudio/rmarkdown) package makes it really easy to do this.
+My approach is to create a template R markdown file and dynamically generate it using [`rmarkdown::render`](https://www.rdocumentation.org/packages/rmarkdown/versions/1.15/topics/render) in a download handler.
+
+The full application is available here: https://github.com/stefaneng/Shiny-Dynamic-Report-Generation
+
+We first need a R markdown template that we can use for the report generation.
+We want to print out some data set using the `pander` package to make nicer formatted tables.
+
+<script src="http://gist-it.appspot.com/http://github.com/stefaneng/Shiny-Dynamic-Report-Generation/blob/master/template.Rmd"></script>
+
+To generate the report from Shiny, we use a [downloadHandler](https://shiny.rstudio.com/reference/shiny/0.14/downloadHandler.html) and render the template using [`rmarkdown::render`](https://www.rdocumentation.org/packages/rmarkdown/versions/1.15/topics/render).
+This is called each time the user clicks the download button. In the [full example on github](https://github.com/stefaneng/Shiny-Dynamic-Report-Generation), the user can select a data set to include in the report which is more realistic.
+The example given is the simplest to get you going on generating your own dynamic reports.
+
+## Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

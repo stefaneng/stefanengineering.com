@@ -20,7 +20,7 @@ csl: ../../static/bibtex/acm-sig-proceedings.csl
 
 ## Introduction
 
-This summer I had the privilege of doing a 3 month summer internship at Novartis’ head office in Basel, Switzerland. I worked in the Scientific Computating and Consulting team within Biostatistics. This post is about the non-technical aspect about the internship at Novartis, particularly focused on Basel. Most of the general information applies to other sites such as Cambridge (USA), East Hanover, or other locations. This post goes into details on 
+This summer I had the privilege of doing a 3 month summer internship at Novartis’ head office in Basel, Switzerland. I worked in the Scientific Computing and Consulting team within Biostatistics. This post is about the non-technical aspect about the internship at Novartis, particularly focused on Basel. Most of the general information applies to other sites such as Cambridge (USA), East Hanover, or other locations. This post goes into details on 
 
   - Application process
   - Work visa

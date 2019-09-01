@@ -1,0 +1,125 @@
+---
+title: Inside a Basel Novartis Internship
+author: Stefan Eng
+date: '2019-09-01'
+slug: inside-a-basel-novartis-internship
+categories:
+  - job
+  - personal
+tags:
+  - pharma
+  - Novartis
+  - non-technical
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+## Introduction
+
+This summer I had the privilege of doing a 3 month summer internship at Novartis’ head office in Basel, Switzerland. I worked in the Scientific Computating and Consulting team within Biostatistics. This post is about the non-technical aspect about the internship at Novartis, particularly focused on Basel. Most of the general information applies to other sites such as Cambridge (USA), East Hanover, or other locations. This post goes into details on 
+
+  - Application process
+  - Work visa
+  - Internship requirements
+  - Campus life
+  - Pay and benefits
+  - Novartis provided housing (Some warning about it as well)
+  
+### TL;DR Quick Facts
+  - Averaged about **46 hour weeks** with the max being a **57 hour week**
+  - Monthly salary of **2500 francs plus 600 for accomodation**
+  - 5 weeks vacation prorated for the length of your internship (**5.5 days of vacation** for my 3 months)
+  - Flexible working hours and potential to work from home one day a week
+  
+![Building designed by Frank Gehry with restaurants and a large auditorium.](/post/2019-09-01-inside-a-basel-novartis-internship_files/Gehry_building.jpg)  
+
+## Application Process
+I found the job on LinkedIn with the title "Intern - Biostatistics". The job description must be identical for all jobs in the biostatistics department since my work was nothing like it was described in the posting.
+I applied through a fairly standard BrassRing website in February and a few days later received an email to set up and interview.
+The interview was done over Skype.
+It was a non-technical interview where we went over my job experience.
+Some of the other questions were standard such as "give me an example of when you dealt with a difficult person at work".
+I was interviewed by my future team, two from Cambridge and one from Basel.
+The job described was completely different than the job posting but I ended up accepting anyway. The whole process from application to offer was fast and professional.
+
+I would say that if you are interested in Pharma and are cold-applying via the website then apply to all positions that are even remotely related to what you are interested in. Even better would be to find contacts within Novartis and find a job directly. Don’t be afraid to apply without pharma experience. I only met one other intern that had worked in pharma before their internship.
+
+## Work Visa
+My contract with Novartis was just under 90 days which meant that I did not need an official work permit. Make sure to apply early if you plan to work for over 90 days. EU citizens (particularly western-EU) have a much easier time getting a permit than non-EU countries. One benefit of staying for longer than 90 days is that you are required to register with the Basel Kanton. You then can get apply for a [half-price transportation card](https://www.sbb.ch/en/travelcards-and-tickets/railpasses/half-fare-travelcard.html) which makes traveling a bit cheaper.
+
+## A Global Company
+Novartis truly feels like a global company as many teams are split across the world. Often meeting are done over Skype or similar internal tool for video conferencing. My team in particular had 3 people in Basel and 4 in Cambridge (USA). I also worked with clients in East Hanover (New Jersey). This was both a up and downside for me because it means less face-to-face interaction. I am fairly introverted and wanted to work on my interpersonal skills as much as possible. Even large meetings with 80+ people might only have 8 people in a room on-site. Many people participate in the meetings from their office. I would have liked the presentations that I gave to have had a larger in-person audience. It doesn’t feel like my public speaking skills improved that much from giving presentations over Skype. If you are uncomfortable with public speaking this is probably a plus for you!
+
+An interesting feature of Basel was the language. Since it is so close to both France and Germany there are quite a few people commuting across the border. Meetings here would often start with asking which language to use. The company language was english but there was always accompanying german. My teammate are french and often would have meetings in french. Depends on your team which language you work in.
+
+## Internship Requirements
+There are not a lot of requirements for the Basel Novartis internship. Many interns have to give a end of internship presentation.
+I believe this was set up automatically in Cambridge and is a requirement.
+In Basel it seems that your supervisor has to set things up themselves.
+I ended up giving one bigger presentation and many to clients of my projects.
+It depends a lot on the field you are in as well. 
+
+There is also a two day welcome-day for all new employees which you should make sure to ask your supervisor about.
+I was unaware of it and was not registered for it.
+It seemed like a good way for new employees to meet each other and explore the opportunities around campus.
+
+You will have to do some virtual training via the up4Growth internal platform.
+I had to do general saftey training and well as ethics, and proper reporting of data.
+There are additional in-person trainings you will need to complete if you are working in a lab.
+
+## Hiring Interns
+Novartis has a large number of interns and post-docs. There were many Master’s students I met doing their thesis work at Novartis. The biostatistics department had many PhD students as well. Other interns were post-graduate and had already completed their degree. I did not meet anyone that was doing their Bachelors degree. At least at Basel, the hiring rate for interns seemed pretty low. This is just compared with my experience in the US. Many of the new hires in my department were senior level employees.
+
+Most of the interns at Novartis have longer contracts and are expected to work for at least 3 months. I would say that the majority of the interns that I met were doing 6 month internships. The demands of each group vary dramatically. Some interns had really light work loads on mundane projects and others had high workloads on important projects.
+
+If your goal is to work at Novartis after finishing your internship know that you have to let your team know your goals. If you don’t tell them you want to work for Novartis you will never get hired. For me this was not an issue as I was not looking for a full-time job from Novartis after my internship.
+
+## Campus Life
+Life at Novartis campus is pretty awesome. They have a [virtual tour available](https://campus.novartis.com/) and if you are in Basel you can get an art tour of the campus. The architecture of the new buildings is really beautiful. There is a building designed by Frank Gehry. An overview of the other architecture can be [found here](https://www.e-architect.co.uk/switzerland/novartis-basel-headquarters).
+One of my favorite buildings was Asklepios, a new building overlooking the Rhine. The view from inside the building is fantastic. You can even take a swim in the Rhine during lunch.
+
+![The view from Asklepios of the Rhine](/post/2019-09-01-inside-a-basel-novartis-internship_files/Asklepios_view.jpg)
+
+The campus is like a small city. You have a coop supermarket, many restaurants, coffee places (even starbucks), ice cream vendors, apple trees, koi pond, and lounge chairs. There is lots of trees and grass to have an enjoyable lunch. Coffee, tea and water are provided in the building. The free coffee is mediocre (the kaffee créme beans are better than the espresso roast) but you can always have a better cup of coffee at one of the cafés around campus.
+
+![Nice areas on campus to take a break](/post/2019-09-01-inside-a-basel-novartis-internship_files/novartis_outside_areas.jpg)
+
+There are always interesting talks and presentations going on around campus. Biostatistics in particularly always seemed to have technical presentations going on. There is lots of effort put into professional development via presentations and courses. I attended a “biostatistics boot camp” which was one of my favorite parts of the summer. I highly recommend it to anyone interested in how drugs progress in human trials, from Phase 1 to market and beyond.
+
+## Pay and benefits
+The base salary for a Master’s student is 2500 francs per month. There is also a living stipend of 600 francs per month. They provide one-way transportation fees up to 400 francs. Your salary is paid into a Novartis bank account where you can transfer money to EU banks. Interns receive vacation prorated for the amount of time they are staying based on the 5-week full time employee yearly vacation. For me this meant I had 5.5 days vacation. Depending on your contract you probably need to clock in your hours. This is done with your badge when you come into your building or go out for lunch. If you miss a clock-in there is an ancient web interface to do it on as well.
+
+Novartis has flexible working hours, which means that you are supposed to have within 25 hours of the monthly full time hours (40 hours per week). This means that if you work more than 8 hours in a day you accrue flextime, up to 25 hours. If you need to leave for a half-day you can take your flextime without any issue. I ended up accumulating lots of hours of flextime and was able to take three full days off in the middle of my internship to get a full week off due to a Thursday/Friday holiday for the Swiss National Day. I ended my internship with a huge surplus of flextime which I was told will be paid out. I did not end up taking my 5.5 days of vacation which will be paid out as well.
+
+In general most people that I worked with were extremely busy and worked many hours. The older, more established employees seemed to take vacation regularly and it was common to have auto-reply emails for all of August. My building was a ghost town in August. Your work-life balance depends a lot on the group you are in. On average I worked about 46 hour weeks with the max being 57. I worked about two half days on the weekend but this was my choice to be better prepared for the week.
+
+You are also allowed to work 20 percent from home (one full day a week).
+I didn't really take advantage of this since I wanted to interact with as many people as I could.
+
+## Accomodations
+
+Novartis provides an options for housing through Aprentas housing: https://www.aprentas.com/. I stayed at the Eglisee Wohnheim Aprentas house which cost 700 francs per month for a “small” room. There are also larger rooms for 800 available. It was nice that I was able to move to Basel without having to worry about find a place to live. The house had capacity for 30 people, 15 guys and 15 girls. Almost everyone was an intern for Novartis which makes it easy to meet people. There was a shared kitchen and everyone had cleaning duty for a week at a time. Overall everyone was really nice and the staff took good care of the place. There was a large proportion of Italians in the house that seemed to always be cooking some amazing smelling food.
+
+### Warning: Move in on the first or the sixteenth of the month
+One gotcha with this was the first months rent (and potentially the last months as well). The housing provided charged full price if you moved in the first 15 days of the month and half price any of the second half days. Okay, seems reasonable. Novartis pro-rates the reimbursement amount based on exactly the number of days you worked this month. So if you move in on the first or 16, no problem. So if you move in the 15th, you will receive ~300 from Novartis but pay the full 700 amount. Similarly if you move in right before the end of the month you will be charged 300 and only receive a small stipend. I told Novartis HR about this but no policy change has occurred so make sure to confirm with them if you get an internship.
+
+### Warning: Aprentas housing in Muttenz
+There is a larger Aprentas housing in Muttenz. It is almost 45 minutes away from Novartis by tram and you are far out of the city center. For most people this housing option is probably worse. The benefits are it is really close to a bouldering gym, [B2 Boulders and Bar](https://www.bzwei.ch) as well as closer to the alps and popular tourist cities (Interlaken, Grindelwald, Bern, etc.)
+
+## Closing Thoughts
+Overall I had an extremely positive internship experience with Novartis. I would highly recommend anyone interested in pharma to apply. It is a fast-paced environment that will challenge you and make you grow. I made so many good connections this summer and will definitely consider working their after I do my PhD. Feel free to reach out for any questions.
+
+If you enjoyed this then stay tuned for my follow up on life in Basel, and the technical portions of my internship.
+
+## Resources
+  - [Novartis Website](https://www.novartis.com/)
+  - [Novartis LinkedIn](https://www.linkedin.com/company/novartis)
+  - [Novartis Open Source](https://github.com/Novartis)
+  - [Aprentas Housing](https://www.aprentas.com)
+  - [Life in Basel](http://www.lifeinbasel.com/)
+  - [Work permits in Switzerland](https://www.swissinfo.ch/eng/work-permits/29191706)
+  - [Quora: How can I win an internship at Roche or Novartis in Basel?](https://www.quora.com/How-can-I-win-an-internship-at-Roche-or-Novartis-in-Basel)

@@ -36,11 +36,9 @@ citep(bib["cresst_eng2018"])
     -  Presented results at IEEE Conference on Semantic Computing `r citet(bib['cresst_eng2018'])`
   - Created an interactive game using Angular2/Ionic to test and measure reasoning and problem
 solving where students attempted to solve tasks by programming an on-screen vehicle.
-    - Conducted multiple data collections at high schools across Los Angeles where around one hundred
-students were involved in the data collection.
+    - Conducted multiple data collections at high schools across Los Angeles involving around 100 students.
     - Event data was analyzed and exploratory analysis was conducted to summarize student’s problem
 solving and reasoning abilities.
-
 
 ### Data Scientist/Software Developer @ [JPL](https://www.jpl.nasa.gov)
 *June 2013 - May 2016*
@@ -51,6 +49,12 @@ Spark ingest code and managing Elasticsearch cluster.
 XML parsing, web scraping, and Scala’s parser combinators.
   - Lead a project to extract data, using Apache Tika, from word documents into MongoDB and
 presented with a web interface.
+
+## Awards
+  - Received Staff Appreciation and Recognition (STAR) award 2018 at UCLA
+  - First place at HackPoly Hackathon Spring 2016
+  - First place in CSUN's [Computer Science Senior Design Project Showcase 2016](https://csunshinetoday.csun.edu/science-and-technology/students-creative-talents-innovation-and-hard-work-highlighted-at-seventh-annual-senior-design-project-showcase/)
+  - First Place in 2014 SS12 Code for a Cause Competition, a programming competition to create applications for people with disabilities.
   
 ## Publications
 

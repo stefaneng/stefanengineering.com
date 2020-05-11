@@ -1,12 +1,14 @@
 ---
 draft: false
-title: Cloze Deletion Detection
+title: Cloze Deletion Prediction with LSTM Neural Networks
 author: Stefan Eng
 date: '2018-11-05'
 slug: cloze-deletion-detection
 categories:
   - machine-learning
+  - project
 tags:
+  - nlp
   - python
   - keras
   - neural-networks
@@ -16,7 +18,8 @@ output:
     fig_width: 5
     fig_height: 5
 aliases:
-  - /1990-1992-census-crime-prediction
+  - /cloze-deletion-prediction
+link-citations: true
 bibliography: ../../static/bibtex/cloze_deletion.bib
 csl: ../../static/bibtex/acm-sig-proceedings.csl     
 ---
@@ -27,9 +30,9 @@ csl: ../../static/bibtex/acm-sig-proceedings.csl
 <h1>Introduction</h1>
 <p>A cloze deletion test is a form of language test where a sentence (or
 paragraph) is given to the test taker with blanks for missing words
-<span class="citation">[7]</span>. The student is expected to fill in a “correct” word in the
+<span class="citation">[<a href="#ref-clozeproc">7</a>]</span>. The student is expected to fill in a “correct” word in the
 blanks.</p>
-<p>Example from Wikipedia’s article on cloze deletion <span class="citation">[8]</span>:</p>
+<p>Example from Wikipedia’s article on cloze deletion <span class="citation">[<a href="#ref-wiki:clozetest">8</a>]</span>:</p>
 <blockquote>
 <p>Today, I went to the ____ and bought some milk and eggs.</p>
 </blockquote>
@@ -37,7 +40,7 @@ blanks.</p>
 etc.</p>
 <p>Cloze deletion tests can be useful for language learners. These type of
 flashcards are described in great detail in Gabriel Wyner’s book, Fluent
-Forever <span class="citation">[11]</span>. The idea is to include a cloze deletion
+Forever <span class="citation">[<a href="#ref-fluentforever">11</a>]</span>. The idea is to include a cloze deletion
 sentence, definition, a picture, other possibly relevant information
 (part of speech, conjugation, etc.). An example of these flash cards can
 be seen in Figure <a href="#fig:flashcard" reference-type="ref" reference="fig:flashcard">1</a> on page .</p>
@@ -74,13 +77,13 @@ which sentences are easy to predict.</p>
 <p class="caption">Sentence Word Count Density for 8 Sidor and Göteborgs-Posten
 2013</p>
 </div>
-<p>The data from Språkbanken comes in XML form <span class="citation">[4]</span>. The two
+<p>The data from Språkbanken comes in XML form <span class="citation">[<a href="#ref-spraakbanken">4</a>]</span>. The two
 data sets I compared were 8 Sidor (from 2002/11/14 to 2017/10/09) and
 Göteborgs-Posten (from 2013). 8 Sidor and Göteborgs-Posten differ in
 their goals as news sites. 8 Sidor describe itself on its website as
-"en nyhetstidning på lättläst svenska." <span class="citation">[1]</span>, which means that it
+"en nyhetstidning på lättläst svenska." <span class="citation">[<a href="#ref-8sidor">1</a>]</span>, which means that it
 is a newspaper in easy to read Swedish. We can see this reflected in the Part-of-speech Count Summary Table.
-Göteborgs-Posten (GP) is a more traditional <span class="citation">[10]</span>. Example sentence from the two 8 Sidor is,</p>
+Göteborgs-Posten (GP) is a more traditional <span class="citation">[<a href="#ref-wiki:gp">10</a>]</span>. Example sentence from the two 8 Sidor is,</p>
 <blockquote>
 <p>Julian Assange säger att han kan gå med på att komma till Sverige och träffa svenska poliser.</p>
 </blockquote>
@@ -217,7 +220,7 @@ was used to predict the words.</p>
 <h1>Comparing LSTM and Bidirectional LSTM</h1>
 <p>The first experiment I ran was to compare the results of a standard LSTM
 and Bidirection LSTM. Keras is used to create the neural networks in
-this paper <span class="citation">[2]</span>. The hypothesis was that a bidirectional LSTM would
+this paper <span class="citation">[<a href="#ref-keras">2</a>]</span>. The hypothesis was that a bidirectional LSTM would
 provide better results because of the natural forward and backward
 context for the word. For example, compare the two sentence below that
 have the same start but end very differently.
@@ -227,14 +230,14 @@ The bidirectional LSTM feeds in both directions which allows for use of the futu
 <p>I went to the <span class="math inline">\(\rule{1cm}{0.15mm}\)</span> and swam 10 laps.</p>
 <p>Using a bidirectional LSTM will allow the model to use the information
 from later in the sequence which could potentially improve the
-performance on sentences like this example. <span class="citation">[5]</span></p>
+performance on sentences like this example. <span class="citation">[<a href="#ref-ngcoursera">5</a>]</span></p>
 <p><img src="/post/2018-11-05-cloze-deletion-detection_files/RNN_BRNN.png" /></p>
 <div id="sec:model_config" class="section level2">
 <h2>Model Configuration</h2>
 <p>For the first test, the 8 Sidor data set was used (number of sentences
 was <span class="math inline">\(259,216\)</span>.) A 30% validation set was used which resulted in
 <span class="math inline">\(202,687\)</span> validation samples. Keras was used to implement the neural
-network <span class="citation">[2]</span>. A window size of 3 was used with <span class="math inline">\(10,000\)</span> word limit
+network <span class="citation">[<a href="#ref-keras">2</a>]</span>. A window size of 3 was used with <span class="math inline">\(10,000\)</span> word limit
 on the vocabulary. Only verbs, adjectives, and nouns were used as the
 prediction word. Any word out of vocabulary was replaced with <em>UNK</em>, and
 if the out of vocabulary word was found in either the before window, the
@@ -253,7 +256,7 @@ token), with a softmax activation. The models were trained with the
 <em>Adam</em> optimizer with 30 epochs and batch size 64. The loss function is
 categorical cross entropy. The categorical cross entropy is a sum of
 each of the individual cross entropy results for each category
-<span class="citation">[9]</span>.
+<span class="citation">[<a href="#ref-wiki:crossentropy">9</a>]</span>.
 <span class="math display">\[H(y, \hat{y}) - \frac{1}{n} \sum_{i = 1}^{n} \sum_{j = 1}^{m} y_{i,j} \log(\hat{y}_{i,j})\]</span>
 Where <span class="math inline">\(y\)</span> is a vector of the true values, and <span class="math inline">\(\hat{y}\)</span> are our
 predictions. We define <span class="math inline">\(n\)</span> as the number of examples, <span class="math inline">\(m\)</span> as the number
@@ -288,7 +291,7 @@ so than the standard LSTM model.</p>
 <h1>Improving Overfitting</h1>
 <p>One way to reduce overfitting is to use dropout. Dropout removes random
 nodes from a neural network while training to prevent the network from
-learning too much from the noise in the dataset <span class="citation">[6]</span>.
+learning too much from the noise in the dataset <span class="citation">[<a href="#ref-dropout_srivastava">6</a>]</span>.
 In the LSTM and Bidirectional LSTM comparison a dropout of <span class="math inline">\(0.1\)</span> was
 used for the inputs to the LSTM. To combat overfitting, the
 Bidirectional LSTM model model was compared with dropout rates <span class="math inline">\(0.2\)</span></p>
@@ -306,7 +309,7 @@ Bidirectional LSTM Layer configured with the dropout set to the value
 <span class="math inline">\(d = 0.2, 0.4, 0.6, 0.8\)</span>. The models were all run with 25 epochs
 (<span class="math inline">\(0,\ldots,24\)</span>) that took about 300 seconds for each epoch. The
 recurrent dropout is also set to the same <span class="math inline">\(d\)</span> value. As described in
-<span class="citation">[3]</span>, the recurrent dropout randomly drops recurrent
+<span class="citation">[<a href="#ref-recurrent_dropout">3</a>]</span>, the recurrent dropout randomly drops recurrent
 connection within the LSTM. The normal dropout parameter randomly drops
 the inputs and output into and out of the LSTM layer.</p>
 <table>

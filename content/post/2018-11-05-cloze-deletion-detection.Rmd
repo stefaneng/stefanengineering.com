@@ -1,12 +1,14 @@
 ---
 draft: false
-title: Cloze Deletion Detection
+title: Cloze Deletion Prediction with LSTM Neural Networks
 author: Stefan Eng
 date: '2018-11-05'
 slug: cloze-deletion-detection
 categories:
   - machine-learning
+  - project
 tags:
+  - nlp
   - python
   - keras
   - neural-networks
@@ -16,7 +18,8 @@ output:
     fig_width: 5
     fig_height: 5
 aliases:
-  - /1990-1992-census-crime-prediction
+  - /cloze-deletion-prediction
+link-citations: true
 bibliography: ../../static/bibtex/cloze_deletion.bib
 csl: ../../static/bibtex/acm-sig-proceedings.csl     
 ---

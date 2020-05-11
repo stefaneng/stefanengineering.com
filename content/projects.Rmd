@@ -1,0 +1,41 @@
+---
+title: "Projects"
+output:
+  html_document:
+    df_print: paged
+disable_comments: yes
+---
+
+## subpat
+  - https://github.com/Novartis/subpat
+  
+_subpat_ is a collection of R shiny modules to create subpopulations and subgroups of clinical trial data. It was designed with CDISC ADaM data format in mind but supports any data format. It features two main applications, the Patient Listing Generator (PLG), and a TTE (time-to-event) analysis app.
+
+This was developed during my summer 2019 internship at Novartis at the Scientific Computing and Consulting group.
+
+## 1990 to 1992 Census Crime Rate Prediction
+  - Date: 2019-2-25
+  - Blog post: https://stefanengineering.com/1990-1992-census-crime-prediction
+  - Code: https://github.com/stefaneng/Census-Crime-Rate-Prediction
+  
+In this analysis I investigate a dataset that provides some demographic information for 440 of the most populous counties in the United States in years 1990-92.
+First I explore linear regression models and then a negative binomial regression model to predict the number of crimes per 1000 people in each county.
+The best linear regression model performed similarly to the negative binomial regression model on the training and test set using the same variables.
+
+## Cloze Deletion Prediction with LSTM Neural Networks with Keras
+
+  - Date: 2018-11-5
+  - Blog post: https://stefanengineering.com/cloze-deletion-prediction
+  - Code: https://github.com/stefaneng/Cloze-Deletion-Prediction
+
+A cloze deletion test is a form of language test where a sentence (or paragraph) is given to the test taker with blanks for missing words. The student is expected to fill in a “correct” word in the blanks.
+
+I explore various machine learning approaches to fill in these missing words from sentences from two Swedish news sources. The goals for this paper were to answer the following questions:
+
+  - Can we predict missing word using only the words around it?
+  - What sentences are good example sentences?
+  - Does length of sentence make a difference?
+  - Where are good sources to find cloze deletion sentences?
+
+I compare the difference between an LSTM (Long-Short term memory) neural 
+network with that of a Bidirectional LSTM using Keras using python.

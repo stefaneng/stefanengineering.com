@@ -20,3 +20,13 @@
 img {
   max-width: 100%;
 }
+
+table {
+   width: 100%;
+   margin: auto;
+   border-top: 1px solid #666;
+   border-bottom: 1px solid #666;
+}
+
+table thead th { border-bottom: 1px solid #ddd; }
+th, td { padding: 5px; }

@@ -35,7 +35,7 @@ This summer I had the privilege of doing a 3 month summer internship at Novartis
   - 5 weeks vacation prorated for the length of your internship (**5.5 days of vacation** for my 3 months)
   - Flexible working hours and potential to work from home one day a week
   
-![Building designed by Frank Gehry with restaurants and a large auditorium.](/post/2019-09-01-inside-a-basel-novartis-internship_files/Gehry_building.jpg)  
+![Building designed by Frank Gehry with restaurants and a large auditorium.](/post/2019-09-01-inside-a-basel-novartis-internship_files/gehry_building.jpg)  
 
 ## Application Process
 I found the job on LinkedIn with the title "Intern - Biostatistics". The job description must be identical for all jobs in the biostatistics department since my work was nothing like it was described in the posting.

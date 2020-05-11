@@ -1,5 +1,5 @@
 ---
-draft: true
+draft: false
 title: Introduction to Time Series
 author: Stefan Eng
 date: '2019-07-06'

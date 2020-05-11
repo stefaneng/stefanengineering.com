@@ -7,9 +7,9 @@ disable_comments: yes
 ---
 
 ## subpat
-  - https://github.com/Novartis/subpat
-  
 _subpat_ is a collection of R shiny modules to create subpopulations and subgroups of clinical trial data. It was designed with CDISC ADaM data format in mind but supports any data format. It features two main applications, the Patient Listing Generator (PLG), and a TTE (time-to-event) analysis app.
+
+https://github.com/Novartis/subpat
 
 This was developed during my summer 2019 internship at Novartis at the Scientific Computing and Consulting group.
 

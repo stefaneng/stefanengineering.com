@@ -50,6 +50,11 @@ XML parsing, web scraping, and Scala’s parser combinators.
   - Lead a project to extract data, using Apache Tika, from word documents into MongoDB and
 presented with a web interface.
 
+## Projects
+
+```{r, child = 'projects.Rmd'}
+```
+
 ## Awards
   - Received Staff Appreciation and Recognition (STAR) award 2018 at UCLA
   - First place at HackPoly Hackathon Spring 2016

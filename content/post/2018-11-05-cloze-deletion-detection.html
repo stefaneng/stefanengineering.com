@@ -1,5 +1,5 @@
 ---
-draft: true
+draft: false
 title: Cloze Deletion Detection
 author: Stefan Eng
 date: '2018-11-05'
@@ -79,16 +79,19 @@ data sets I compared were 8 Sidor (from 2002/11/14 to 2017/10/09) and
 Göteborgs-Posten (from 2013). 8 Sidor and Göteborgs-Posten differ in
 their goals as news sites. 8 Sidor describe itself on its website as
 "en nyhetstidning på lättläst svenska." <span class="citation">[1]</span>, which means that it
-is a newspaper in easy to read Swedish. We can see this reflected in
-Table <a href="#tab:possum" reference-type="ref" reference="tab:possum"><span class="math display">\[tab:possum\]</span></a> on page . Göteborgs-Posten (GP) is a more
-traditional <span class="citation">[10]</span>. Example sentence from the two 8 Sidor is,</p>
+is a newspaper in easy to read Swedish. We can see this reflected in the Part-of-speech Count Summary Table.
+Göteborgs-Posten (GP) is a more traditional <span class="citation">[10]</span>. Example sentence from the two 8 Sidor is,</p>
+<blockquote>
+<p>Julian Assange säger att han kan gå med på att komma till Sverige och träffa svenska poliser.</p>
+</blockquote>
 <p>and an example from Göteborgs-Posten is</p>
+<blockquote>
+<p>I morgon är det ett år sedan Wikileaks-grundaren Julian Assange klev in på Ecuadors ambassad i London på flykt undan de svenska brottsutredarna.</p>
+</blockquote>
 <p>We can see from this example that Göteborgs-Posten uses more complex
 sentence structures and more advanced vocabulary. This is also reflected
-in the word count usage as seen in
-Figure <a href="#fig:word_density" reference-type="ref" reference="fig:word_density"><span class="math display">\[fig:word\_density\]</span></a>. Göteborgs-Posten has a higher density of
-sentences with more words. In general, longer sentences are often more
-complex grammatically.</p>
+in the word count usage as seen in Sentence Word Count Density plot.. Göteborgs-Posten has a higher density of
+sentences with more words. In general, longer sentences are often more complex grammatically.</p>
 <table>
 <caption>Part-of-speech Count Summary<span label="tab:possum"></span></caption>
 <thead>
@@ -128,9 +131,7 @@ were joined from the <em>w</em> (word) tags and part of speech tags were
 retained as well. There were occasionally multiple sentences that were
 found in the same text tag. These were kept as separate sentences at
 first but could be joined. Punctuation was also removed from the
-sentences. The available fields from Språkbanken data sets can be seen
-in
-Table <a href="#tab:spraakbankmeta" reference-type="ref" reference="tab:spraakbankmeta"><span class="math display">\[tab:spraakbankmeta\]</span></a>.</p>
+sentences. The available fields from Språkbanken data sets can be seen in the table below</p>
 <table>
 <caption>Språkbanken Metadata<span label="tab:spraakbankmeta"></span></caption>
 <thead>
@@ -219,18 +220,15 @@ and Bidirection LSTM. Keras is used to create the neural networks in
 this paper <span class="citation">[2]</span>. The hypothesis was that a bidirectional LSTM would
 provide better results because of the natural forward and backward
 context for the word. For example, compare the two sentence below that
-have the same start but end very differently. As seen in
-Figure <a href="#fig:rnn_brnn" reference-type="ref" reference="fig:rnn_brnn"><span class="math display">\[fig:rnn\_brnn\]</span></a>, the standard LSTM feeds the sequence in in
-one direction and does not have access to the later data. The
-bidirectional feeds in both directions which allows for seeing the
-future data.</p>
+have the same start but end very differently.
+The standard LSTM feeds the sequence in in one direction and does not have access to the later data.
+The bidirectional LSTM feeds in both directions which allows for use of the future data.</p>
 <p>I went to the <span class="math inline">\(\rule{1cm}{0.15mm}\)</span> and bought some milk and eggs.</p>
 <p>I went to the <span class="math inline">\(\rule{1cm}{0.15mm}\)</span> and swam 10 laps.</p>
 <p>Using a bidirectional LSTM will allow the model to use the information
 from later in the sequence which could potentially improve the
 performance on sentences like this example. <span class="citation">[5]</span></p>
 <p><img src="/post/2018-11-05-cloze-deletion-detection_files/RNN_BRNN.png" /></p>
-<p><span id="fig:rnn_brnn" label="fig:rnn_brnn"><span class="math display">\[fig:rnn\_brnn\]</span></span></p>
 <div id="sec:model_config" class="section level2">
 <h2>Model Configuration</h2>
 <p>For the first test, the 8 Sidor data set was used (number of sentences
@@ -244,10 +242,8 @@ word, or the after window the training example was discarded. This
 resulted in <span class="math inline">\(472,934\)</span> training examples.</p>
 <p><img src="/post/2018-11-05-cloze-deletion-detection_files/atta_sample_lstm.png" title="fig:" />
 <img src="/post/2018-11-05-cloze-deletion-detection_files/atta_sample_blstm.png" title="fig:" /></p>
-<p><span id="fig:compare_lstm" label="fig:compare_lstm"><span class="math display">\[fig:compare\_lstm\]</span></span></p>
-<p>The models were identical apart from the LSTM layer being bidirectional
-which can be seen in Figure
-<a href="#fig:compare_lstm" reference-type="ref" reference="fig:compare_lstm"><span class="math display">\[fig:compare\_lstm\]</span></a>. The before window and after window are
+<p>The models were identical apart from the LSTM layer being bidirectional.
+The before window and after window are
 first concatenated into a single layer. Then an embedding layer is used
 with an embedding size of 100. The LSTM layer has 50 units, with the
 default Keras parameters of activation being <span class="math inline">\(tanh\)</span>. There is a dropout
@@ -270,12 +266,18 @@ we do not have more than one category.</p>
 </div>
 <div id="results" class="section level2">
 <h2>Results</h2>
-<p><img src="/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_loss.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between LSTM and Bidirectional LSTM Models" /> <img src="/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_acc.png" title="fig:" alt="Comparing accuracy and cross-entropy loss between LSTM and Bidirectional LSTM Models" /></p>
-<p><span id="fig:lstm_compare_loss" label="fig:lstm_compare_loss"><span class="math display">\[fig:lstm\_compare\_loss\]</span></span></p>
-<p>Figure
-<a href="#fig:lstm_compare_loss" reference-type="ref" reference="fig:lstm_compare_loss"><span class="math display">\[fig:lstm\_compare\_loss\]</span></a> shows the accuracy and the
-categorical cross entropy for the LSTM and the Bidirectional LSTM model.
-We can see the Bidirectional LSTM model performs much better than the
+<div class="figure">
+<img src="/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_loss.png" alt="Comparing cross-entropy loss between LSTM and Bidirectional LSTM Models" />
+<p class="caption">Comparing cross-entropy loss between LSTM and
+Bidirectional LSTM Models</p>
+</div>
+<div class="figure">
+<img src="/post/2018-11-05-cloze-deletion-detection_files/blstm_compare_acc.png" alt="Comparing accuracy loss between LSTM and Bidirectional LSTM Models" />
+<p class="caption">Comparing
+accuracy loss between LSTM and Bidirectional LSTM
+Models</p>
+</div>
+<p>We can see the Bidirectional LSTM model performs much better than the
 LSTM model on the training data. It also performs a little bit better on
 the validation data. From these plots we can see that both the models
 are over fitting but the Bidirectional LSTM model is over fitting more
@@ -297,9 +299,8 @@ Bidirectional LSTM model model was compared with dropout rates <span class="math
 <p class="caption">Comparing dropout values of 0.2, 0.4, 0.6 and 0.8 on Bidirectional
 LSTM Model</p>
 </div>
-<p><span id="fig:dropout_compare_loss" label="fig:dropout_compare_loss"><span class="math display">\[fig:dropout\_compare\_loss\]</span></span></p>
 <p>Using the Bidirectional LSTM model described in
-Section <a href="#sec:model_config" reference-type="ref" reference="sec:model_config">4.1</a>, an experiment was set up to see how
+the <a href="#sec:model_config" reference-type="ref" reference="sec:model_config">Model Config Section</a>, an experiment was set up to see how
 dropout parameter affected the results on the model. All models has the
 Bidirectional LSTM Layer configured with the dropout set to the value
 <span class="math inline">\(d = 0.2, 0.4, 0.6, 0.8\)</span>. The models were all run with 25 epochs
@@ -340,14 +341,12 @@ the inputs and output into and out of the LSTM layer.</p>
 </tr>
 </tbody>
 </table>
-<p><span id="tab:dropout_loss" label="tab:dropout_loss"><span class="math display">\[tab:dropout\_loss\]</span></span></p>
 <p>We can see that with dropout set to <span class="math inline">\(0.2\)</span>, that the difference between
 the validation loss and the training loss is very high. The validation
 loss also starts to increase after epoch 7. The minimum value achieve
 was at epoch 7, with a categorical cross entropy of 3.374. For the other
 dropout values 0.4, 0.6, and 0.8 the minimum loss was 3.342, 3.451, and
-3.824. The results are summarized in
-Table <a href="#tab:dropout_loss" reference-type="ref" reference="tab:dropout_loss"><span class="math display">\[tab:dropout\_loss\]</span></a> on page .</p>
+3.824.</p>
 <p>We can see as the dropout value increases, the training loss and
 validation loss are closer together, indicating less overfitting. When
 using a higher value of dropout, the model tends to converge slower.
@@ -362,19 +361,16 @@ for much longer to see where the loss converges to.</p>
 model predicted very well. First the model was used to predict the
 missing values. Then the cross entropy was computed for each training
 example.</p>
-<p>Figure
-<a href="#fig:word_count_entropy" reference-type="ref" reference="fig:word_count_entropy"><span class="math display">\[fig:word\_count\_entropy\]</span></a> shows the average (mean) cross
-entropy for each word count group. The points <span class="math inline">\((x,y)\)</span> represent the mean
-cross entropy of each sentence that has a word count of <span class="math inline">\(x\)</span>. The bars
-represent the standard deviation within the each word count group. We
-can see from this graph that very short sentences are hard to predict
-(<span class="math inline">\(x &lt; 5\)</span>) as well as large sentences (<span class="math inline">\(x &gt; 25\)</span>).</p>
 <div class="figure">
 <img src="/post/2018-11-05-cloze-deletion-detection_files/cross_entropy_word_count.png" alt="Average Cross Entropy for each word count group" />
 <p class="caption">Average Cross Entropy for each word count
 group</p>
 </div>
-<p><span id="fig:word_count_entropy" label="fig:word_count_entropy"><span class="math display">\[fig:word\_count\_entropy\]</span></span></p>
+<p>The points <span class="math inline">\((x,y)\)</span> represent the mean
+cross entropy of each sentence that has a word count of <span class="math inline">\(x\)</span>. The bars
+represent the standard deviation within the each word count group. We
+can see from this graph that very short sentences are hard to predict
+(<span class="math inline">\(x &lt; 5\)</span>) as well as large sentences (<span class="math inline">\(x &gt; 25\)</span>).</p>
 <div id="best-prediction-examples" class="section level2">
 <h2>Best Prediction Examples</h2>
 <table>
@@ -468,10 +464,7 @@ group</p>
 </tr>
 </tbody>
 </table>
-<p><span id="tab:pred_examples" label="tab:pred_examples"><span class="math display">\[tab:pred\_examples\]</span></span></p>
-<p>In
-Table <a href="#tab:pred_examples" reference-type="ref" reference="tab:pred_examples"><span class="math display">\[tab:pred\_examples\]</span></a> on page , we can see the predictions from
-the model which had the lowest cross entropy. Many of these top
+<p>We can see the predictions from the model which had the lowest cross entropy. Many of these top
 predicted words are parts of proper nouns or named entities which is
 fairly obvious because these words don’t appear in other contexts on
 their own.</p>
@@ -513,36 +506,37 @@ Since the total number of words in the vocabulary is larger, there will
 be many more words excluded. This results in a total smaller number of
 examples. While this is a rather small amount of data it is the same for
 both data sets so we can compare the results between them. The model is
-configured the same as described in
-<a href="#sec:model_config" reference-type="ref" reference="sec:model_config">4.1</a>, but with dropout set to <span class="math inline">\(0.2\)</span>. The
+configured the same as described in the <a href="#sec:model_config" reference-type="ref" reference="sec:model_config">model config section</a>, but with dropout set to <span class="math inline">\(0.2\)</span>. The
 tokenizer was the same for each data set but the models are trained
 individually. The data was fit with 30 epochs.</p>
 <div id="results-1" class="section level2">
 <h2>Results</h2>
-<p><img src="/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_loss.png" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" /> <img src="/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_acc.png" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" /></p>
-<p><span id="fig:atta_gp2013_compare" label="fig:atta_gp2013_compare"><span class="math display">\[fig:atta\_gp2013\_compare\]</span></span></p>
-<p>We can see in
-Figure <a href="#fig:atta_gp2013_compare" reference-type="ref" reference="fig:atta_gp2013_compare"><span class="math display">\[fig:atta\_gp2013\_compare\]</span></a> the cross entropy and the accuracy
-for each of the data sets. The training loss decreasing fast for both
-data sets. As seen in section
-<a href="#sec:model_config" reference-type="ref" reference="sec:model_config">4.1</a> the model overfits the training data. The
-loss for the Göteborgs-Posten data set actually starts to increase with
-the number of epochs. Overall, the model can predict better on the 8
-Sidor data set than the data from Göteborgs-Posten 2013.</p>
+<div class="figure">
+<img src="/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_loss.png" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" />
+<p class="caption">Comparing accuracy and cross-entropy loss between 8 Sidor and GP
+2013</p>
+</div>
+<div class="figure">
+<img src="/post/2018-11-05-cloze-deletion-detection_files/compare_atta_gp_acc.png" alt="Comparing accuracy and cross-entropy loss between 8 Sidor and GP 2013" />
+<p class="caption">Comparing accuracy and
+cross-entropy loss between 8 Sidor and GP
+2013</p>
+</div>
+<p>The training loss decreasing fast for both
+data sets but the model overfits the training data.
+The loss for the Göteborgs-Posten data set actually starts to increase with the number of epochs. Overall, the model can predict better on the 8 Sidor data set than the data from Göteborgs-Posten 2013.</p>
 <p>These results are consistent with the original hypothesis. 8 Sidor’s
-intention is to create simple to read new articles without complicated
-sentence structure and words. Often readers of this newspaper are
+intention is to create simple to read new articles without complicated sentence structure and words. Often readers of this newspaper are
 learners of the Swedish language. Göteborgs-Posten wants to be
 interesting to its audience, which has presumably a majority native
 Swedish speakers. The writers want to write in an interesting way to
 convey a message with a much broader vocabulary. This can be seen in the
-part of speech count summary found in
-Table <a href="#tab:possum" reference-type="ref" reference="tab:possum"><span class="math display">\[tab:possum\]</span></a> on page .</p>
+part of speech count summary table.</p>
 </div>
 </div>
 <div id="conclusion" class="section level1">
 <h1>Conclusion</h1>
-<p>In the paper I explored how we can predict cloze deletion sentences
+<p>In this blog post I explored how we can predict cloze deletion sentences
 using recurrent (LSTM) neural networks. The bidirectional variant of
 LSTM was compared with a standard LSTM model. The dropout parameter was
 tuned through experiments on the 8 Sidor data set.</p>

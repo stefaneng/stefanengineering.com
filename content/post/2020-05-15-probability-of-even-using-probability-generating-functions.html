@@ -1,0 +1,135 @@
+---
+title: Probability of even/odd using probability generating functions
+author: Stefan Eng
+date: '2020-05-15'
+slug: probability-of-even-generating-functions
+categories:
+  - math
+tags:
+  - exercise
+  - probability
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+
+
+<div id="probability-generating-functions" class="section level2">
+<h2>Probability Generating Functions</h2>
+<p>A probability generating function for a discrete random variable <span class="math inline">\(X\)</span> taking values <span class="math inline">\(\{0,1,\ldots\}\)</span> is defined as
+<span class="math display">\[
+G(z) = E[z^X] = \sum_{j = 0}^\infty z^j P(X = j)
+\]</span></p>
+<p>Which is defined for all complex <span class="math inline">\(z\)</span> in which the sum converges.
+It always converges for <span class="math inline">\(|z| &lt; 1\)</span> but the radius might be larger depending on our distribution.
+Clearly we have that <span class="math inline">\(G(0) = 0\)</span>.
+Also we can see that
+<span class="math display">\[
+G(1) = \sum_{j = 0}^\infty P(X = j) = 1
+\]</span>
+since we are summing over the entire sample space.</p>
+<div id="exercise" class="section level3">
+<h3>Exercise</h3>
+<p>This is problem 1.11 in Ross’s Stochastic Processes Second Edition.</p>
+<p>We have that
+<span class="math display">\[
+\begin{aligned}
+G(-1) &amp;= \sum_{j = 0}^\infty (-1)^j P(X = j)\\
+  &amp;= P(X = 0) - P(X = 1) + P(X = 2) - \cdots\\
+G(1) &amp;= P(X = 0) + P(X = 1) + P(X = 2) + \cdots\\
+G(-1) + G(1) &amp;= 2P(X = 0) + 2P(X = 2) + 2 P(X = 4) + \cdots
+\end{aligned}
+\]</span></p>
+<p>Assuming that 0 is considered even it follows that
+<span class="math display">\[
+\begin{aligned}
+P(X \text{ is even}) = \frac{G(1) + G(-1)}{2} = \frac{1 + G(-1)}{2}
+\end{aligned}
+\]</span>
+We also have that
+<span class="math display">\[
+P(X \text{ is odd}) = 1 - \frac{1 + G(-1)}{2} = \frac{1 - G(-1)}{2}
+\]</span></p>
+</div>
+<div id="binomial" class="section level3">
+<h3>Binomial</h3>
+<p>Assume that <span class="math inline">\(X\)</span> is a binomial with parameters <span class="math inline">\(n\)</span> and <span class="math inline">\(p\)</span>
+<span class="math display">\[
+P(X = x) = {n \choose x} p^x (1 - p)^{n - x}
+\]</span>
+Then we can compute the probability generating function</p>
+<p><span class="math display">\[
+\begin{aligned}
+G(z) = E[z^X] &amp;= \sum_{j = 0}^\infty z^j P(X = j)\\
+  &amp;= \sum_{j = 0}^\infty z^j {n \choose j} p^j (1 - p)^{n - j}\\
+  &amp;= \sum_{j = 0}^n {n \choose j} (zp)^j (1 - p)^{n - j}\\
+  &amp;= (zp + 1 - p)^n &amp;&amp; \text{Binomial theorem}
+\end{aligned}
+\]</span>
+Note that the sum converges for all real <span class="math inline">\(z\)</span>.
+This is a good point to check that our result matches that <span class="math inline">\(G(1) = 1\)</span>.
+So <span class="math inline">\(G(-1) = (1 - 2p)^n\)</span>.
+Thus,
+<span class="math display">\[
+P(X \text{ is even}) = \frac{1 + (1 - 2p)^n}{2}
+\]</span></p>
+</div>
+<div id="poisson" class="section level3">
+<h3>Poisson</h3>
+<p>Let <span class="math inline">\(X\)</span> be a Poisson random variable with mean <span class="math inline">\(\lambda\)</span>
+<span class="math display">\[
+P(X = k) = e^{-\lambda} \frac{\lambda^k}{k!}
+\]</span></p>
+<p>Then
+<span class="math display">\[
+\begin{aligned}
+G(z) = E[z^X] &amp;= \sum_{j = 0}^\infty z^j e^{-\lambda} \frac{\lambda^j}{j!}\\
+  &amp;= e^{-\lambda} \sum_{j = 0}^\infty  \frac{(\lambda z)^j}{j!}\\
+  &amp;= e^{-\lambda} e^{\lambda z}\\
+  &amp;= e^{-\lambda + \lambda z}
+\end{aligned}
+\]</span>
+Note that the sum converges for all real <span class="math inline">\(z\)</span>.
+Again as an exercise check that <span class="math inline">\(G(1) = 1\)</span>.
+It follows that
+<span class="math display">\[
+G(-1) = e^{-2\lambda}
+\]</span>
+So the probability of a Poisson random variable being even is
+<span class="math display">\[
+P(X \text{ is even}) = \frac{1 + e^{-2\lambda}}{2}
+\]</span></p>
+</div>
+<div id="geometric" class="section level3">
+<h3>Geometric</h3>
+<p>Assume now that <span class="math inline">\(X\)</span> is geometric with parameter <span class="math inline">\(p\)</span> with <span class="math inline">\(X \in \{1,2,\ldots\}\)</span>.
+<span class="math display">\[
+P(X = k) = p (1 - p)^{k - 1}
+\]</span>
+Then the probability generating function for <span class="math inline">\(X\)</span> is</p>
+<p><span class="math display">\[
+\begin{aligned}
+G(z) = E[z^X] &amp;= \sum_{j = 1}^\infty z^j P(X = j)\\
+  &amp;= \sum_{j = 1}^\infty z^j p (1 - p)^{j - 1}\\
+  &amp;= pz \sum_{j = 1}^\infty (z(1 - p))^{j - 1}\\
+  &amp;= pz \sum_{j = 0}^\infty (z(1 - p))^{j}\\
+  &amp;= \frac{pz}{1 - z(1 - p)} &amp;&amp; \text{ for } |z| &lt; \frac{1}{1 - p}
+\end{aligned}
+\]</span>
+Since <span class="math inline">\(1 - p &lt; 1\)</span>, then the sum converges for <span class="math inline">\(z = -1\)</span>. It follows that
+<span class="math display">\[
+G(-1) = \frac{- p}{2 - p}
+\]</span>
+So the probability that the geometric random variable <span class="math inline">\(X\)</span> is even is given by</p>
+<p><span class="math display">\[
+\begin{aligned}
+P(X \text{ is even}) &amp;= \frac{1 + \frac{- p}{2 - p}}{2}\\
+&amp;= \frac{1 - p}{2 - p}
+\end{aligned}
+\]</span></p>
+</div>
+</div>

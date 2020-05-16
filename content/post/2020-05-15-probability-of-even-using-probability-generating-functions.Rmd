@@ -1,0 +1,138 @@
+---
+title: Probability of even/odd using probability generating functions
+author: Stefan Eng
+date: '2020-05-15'
+slug: probability-of-even-generating-functions
+categories:
+  - math
+tags:
+  - exercise
+  - probability
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+
+
+## Probability Generating Functions
+
+A probability generating function for a discrete random variable $X$ taking values $\{0,1,\ldots\}$ is defined as
+$$
+G(z) = E[z^X] = \sum_{j = 0}^\infty z^j P(X = j)
+$$
+
+Which is defined for all complex $z$ in which the sum converges.
+It always converges for $|z| < 1$ but the radius might be larger depending on our distribution.
+Clearly we have that $G(0) = 0$.
+Also we can see that
+$$
+G(1) = \sum_{j = 0}^\infty P(X = j) = 1
+$$
+since we are summing over the entire sample space.
+
+### Exercise
+
+This is problem 1.11 in Ross's Stochastic Processes Second Edition.
+
+We have that
+$$
+\begin{aligned}
+G(-1) &= \sum_{j = 0}^\infty (-1)^j P(X = j)\\
+  &= P(X = 0) - P(X = 1) + P(X = 2) - \cdots\\
+G(1) &= P(X = 0) + P(X = 1) + P(X = 2) + \cdots\\
+G(-1) + G(1) &= 2P(X = 0) + 2P(X = 2) + 2 P(X = 4) + \cdots
+\end{aligned}
+$$
+
+Assuming that 0 is considered even it follows that
+$$
+\begin{aligned}
+P(X \text{ is even}) = \frac{G(1) + G(-1)}{2} = \frac{1 + G(-1)}{2}
+\end{aligned}
+$$
+We also have that
+$$
+P(X \text{ is odd}) = 1 - \frac{1 + G(-1)}{2} = \frac{1 - G(-1)}{2}
+$$
+
+### Binomial 
+Assume that $X$ is a binomial with parameters $n$ and $p$
+$$
+P(X = x) = {n \choose x} p^x (1 - p)^{n - x}
+$$
+Then we can compute the probability generating function
+
+$$
+\begin{aligned}
+G(z) = E[z^X] &= \sum_{j = 0}^\infty z^j P(X = j)\\
+  &= \sum_{j = 0}^\infty z^j {n \choose j} p^j (1 - p)^{n - j}\\
+  &= \sum_{j = 0}^n {n \choose j} (zp)^j (1 - p)^{n - j}\\
+  &= (zp + 1 - p)^n && \text{Binomial theorem}
+\end{aligned}
+$$
+Note that the sum converges for all real $z$.
+This is a good point to check that our result matches that $G(1) = 1$.
+So $G(-1) = (1 - 2p)^n$.
+Thus,
+$$
+P(X \text{ is even}) = \frac{1 + (1 - 2p)^n}{2}
+$$
+
+### Poisson
+Let $X$ be a Poisson random variable with mean $\lambda$
+$$
+P(X = k) = e^{-\lambda} \frac{\lambda^k}{k!}
+$$
+
+Then
+$$
+\begin{aligned}
+G(z) = E[z^X] &= \sum_{j = 0}^\infty z^j e^{-\lambda} \frac{\lambda^j}{j!}\\
+  &= e^{-\lambda} \sum_{j = 0}^\infty  \frac{(\lambda z)^j}{j!}\\
+  &= e^{-\lambda} e^{\lambda z}\\
+  &= e^{-\lambda + \lambda z}
+\end{aligned}
+$$
+Note that the sum converges for all real $z$.
+Again as an exercise check that $G(1) = 1$.
+It follows that
+$$
+G(-1) = e^{-2\lambda}
+$$
+So the probability of a Poisson random variable being even is
+$$
+P(X \text{ is even}) = \frac{1 + e^{-2\lambda}}{2}
+$$
+
+### Geometric
+Assume now that $X$ is geometric with parameter $p$ with $X \in \{1,2,\ldots\}$.
+$$
+P(X = k) = p (1 - p)^{k - 1}
+$$
+Then the probability generating function for $X$ is
+
+$$
+\begin{aligned}
+G(z) = E[z^X] &= \sum_{j = 1}^\infty z^j P(X = j)\\
+  &= \sum_{j = 1}^\infty z^j p (1 - p)^{j - 1}\\
+  &= pz \sum_{j = 1}^\infty (z(1 - p))^{j - 1}\\
+  &= pz \sum_{j = 0}^\infty (z(1 - p))^{j}\\
+  &= \frac{pz}{1 - z(1 - p)} && \text{ for } |z| < \frac{1}{1 - p}
+\end{aligned}
+$$
+Since $1 - p < 1$, then the sum converges for $z = -1$. It follows that
+$$
+G(-1) = \frac{- p}{2 - p}
+$$
+So the probability that the geometric random variable $X$ is even is given by
+
+$$
+\begin{aligned}
+P(X \text{ is even}) &= \frac{1 + \frac{- p}{2 - p}}{2}\\
+&= \frac{1 - p}{2 - p}
+\end{aligned}
+$$

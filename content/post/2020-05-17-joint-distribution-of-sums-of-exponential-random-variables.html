@@ -1,0 +1,79 @@
+---
+title: Joint distribution of sums of exponential random variables
+author: Stefan Eng
+date: '2020-05-17'
+slug: joint-distribution-of-sums-of-exponential-random-variables
+categories:
+  - math
+tags:
+  - probability
+  - exercise
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+
+
+<p>This is a problem from Ross’s Stochastic Processes.
+Let
+<span class="math display">\[
+\begin{aligned}
+S_1 &amp;= X_1\\
+S_2 &amp;= X_1 + X_2\\
+S_3 &amp;= X_1 + X_2 + X_3
+\end{aligned}
+\]</span>
+where <span class="math inline">\(X_1, X_2, X_3\)</span> are i.i.d exponential random variables with rate <span class="math inline">\(\lambda\)</span>.
+Find the joint distribution of <span class="math inline">\(S_1, S_2, S_3\)</span>.</p>
+<p>Let <span class="math inline">\(f\)</span> be the PDF of each <span class="math inline">\(X_1, X_2, X_3\)</span> (since identically distributed). Since <span class="math inline">\(X_1, X_2, X_3\)</span> are independent the joint PDF is
+<span class="math display">\[
+f(x,y,z) = f(x) f(y) f(z) = \lambda^3 e^{-\lambda x} e^{-\lambda y} e^{-\lambda z}
+\]</span>
+Then we can find the joint CDF of <span class="math inline">\(S_1, S_2, S_3\)</span>
+<span class="math display">\[
+\begin{aligned}
+P(S_1 \leq t_1, S_2 \leq t_2, S_3 \leq t_3) &amp;= \int_{0}^{t_1} \int_{0}^{t_2 - x} \int_{0}^{t_3 - x - y} f(x,y,z) ~dz~dy~dx\\
+&amp;= \int_{0}^{t_1} \int_{0}^{t_2 - x} \int_{0}^{t_3 - x - y} \lambda e^{-\lambda z} \lambda e^{-\lambda y} \lambda e^{-\lambda x}~dz~dy~dx\\
+&amp;= \int_{0}^{t_1} \lambda e^{-\lambda x} \int_{0}^{t_2 - x} (1 - e^{-\lambda (t_3 - x - y)}) \lambda e^{-\lambda y}~dy~dx\\
+&amp;= \int_{0}^{t_1} \lambda e^{-\lambda x} \left[\int_{0}^{t_2 - x} \lambda e^{-\lambda y}~dy -  \int_{0}^{t_2 - x} e^{-\lambda (t_3 - x)}~dy\right]~dx\\
+&amp;= \int_{0}^{t_1} \lambda e^{-\lambda x} \left[(1 - e^{-\lambda (t_2 - x)}) - (t_2 - x) e^{-\lambda (t_3 - x)}\right]~dx\\
+&amp;= \int_{0}^{t_1} \lambda e^{-\lambda x} ~dx - \int_{0}^{t_1} \lambda e^{-\lambda t_2} ~dx - \int_{0}^{t_1} (t_2 - x) e^{-\lambda t_3}~dx\\
+&amp;= 1 - e^{-\lambda t_1} - \lambda t_1 e^{-\lambda t_2} - t_1 t_2 e^{-\lambda t_3} + \frac{1}{2} t_1^2 e^{-\lambda t_3}
+\end{aligned}
+\]</span></p>
+<div id="simulation" class="section level3">
+<h3>Simulation</h3>
+<p>We can confirm these results with a simple simulation in R.</p>
+<pre class="r"><code># Computed joint CDF
+expect_joint &lt;- function(t1, t2, t3, lambda = 1) {
+  1 - exp(- lambda * t1) - lambda * t1 * exp(-lambda * t2) - 
+    t1 * t2 * exp(-lambda * t3) + 1/2 * t1^2 *exp(- lambda * t3)
+}
+
+# Simulate 1000 realizations of S1, S2, S3
+sim &lt;- function(t1, t2, t3, rate = 1, n = 1000) {
+  s1 &lt;- rexp(n, rate)
+  s2 &lt;- s1 + rexp(n, rate)
+  s3 &lt;- s2 + rexp(n, rate)
+  
+  mean(s1 &lt;= t1 &amp; s2 &lt;= t2 &amp; s3 &lt;= t3)
+}
+
+# P(S1 &lt;= 1, S2 &lt;= 2, S3 &lt;= 3) with lambda = 1
+t1 &lt;- 1
+t2 &lt;- 2
+t3 &lt;- 3
+rate &lt;- 1
+# Replicate the simulation 1000 times
+sim_res &lt;- replicate(1000, sim(t1, t2, t3, rate))
+
+cat(&quot;Simulated mean:&quot;, round(mean(sim_res), 3))</code></pre>
+<pre><code>Simulated mean: 0.421</code></pre>
+<pre class="r"><code>cat(&quot;Expected joint distribution:&quot;, round(expect_joint(t1, t2, t3, rate), 3))</code></pre>
+<pre><code>Expected joint distribution: 0.422</code></pre>
+<p>```</p>
+</div>

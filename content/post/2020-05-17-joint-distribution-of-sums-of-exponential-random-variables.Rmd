@@ -1,0 +1,101 @@
+---
+title: Joint distribution of sums of exponential random variables
+author: Stefan Eng
+date: '2020-05-17'
+slug: joint-distribution-of-sums-of-exponential-random-variables
+categories:
+  - math
+tags:
+  - probability
+  - exercise
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(sessioninfo) # for session_info()
+library(ggplot2)
+library(here)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# My favorite theme
+theme_set(ggplot2::theme_minimal(base_size = 15, base_family = "Arial"))
+```
+
+This is a problem from Ross's Stochastic Processes.
+Let 
+$$
+\begin{aligned}
+S_1 &= X_1\\
+S_2 &= X_1 + X_2\\
+S_3 &= X_1 + X_2 + X_3
+\end{aligned}
+$$
+where $X_1, X_2, X_3$ are i.i.d exponential random variables with rate $\lambda$.
+Find the joint distribution of $S_1, S_2, S_3$.
+
+Let $f$ be the PDF of each $X_1, X_2, X_3$ (since identically distributed). Since $X_1, X_2, X_3$ are independent the joint PDF is 
+$$
+f(x,y,z) = f(x) f(y) f(z) = \lambda^3 e^{-\lambda x} e^{-\lambda y} e^{-\lambda z}
+$$
+Then we can find the joint CDF of $S_1, S_2, S_3$
+$$
+\begin{aligned}
+P(S_1 \leq t_1, S_2 \leq t_2, S_3 \leq t_3) &= \int_{0}^{t_1} \int_{0}^{t_2 - x} \int_{0}^{t_3 - x - y} f(x,y,z) ~dz~dy~dx\\
+&= \int_{0}^{t_1} \int_{0}^{t_2 - x} \int_{0}^{t_3 - x - y} \lambda e^{-\lambda z} \lambda e^{-\lambda y} \lambda e^{-\lambda x}~dz~dy~dx\\
+&= \int_{0}^{t_1} \lambda e^{-\lambda x} \int_{0}^{t_2 - x} (1 - e^{-\lambda (t_3 - x - y)}) \lambda e^{-\lambda y}~dy~dx\\
+&= \int_{0}^{t_1} \lambda e^{-\lambda x} \left[\int_{0}^{t_2 - x} \lambda e^{-\lambda y}~dy -  \int_{0}^{t_2 - x} e^{-\lambda (t_3 - x)}~dy\right]~dx\\
+&= \int_{0}^{t_1} \lambda e^{-\lambda x} \left[(1 - e^{-\lambda (t_2 - x)}) - (t_2 - x) e^{-\lambda (t_3 - x)}\right]~dx\\
+&= \int_{0}^{t_1} \lambda e^{-\lambda x} ~dx - \int_{0}^{t_1} \lambda e^{-\lambda t_2} ~dx - \int_{0}^{t_1} (t_2 - x) e^{-\lambda t_3}~dx\\
+&= 1 - e^{-\lambda t_1} - \lambda t_1 e^{-\lambda t_2} - t_1 t_2 e^{-\lambda t_3} + \frac{1}{2} t_1^2 e^{-\lambda t_3}
+\end{aligned}
+$$
+
+### Simulation
+We can confirm these results with a simple simulation in R.
+
+```{r, echo=TRUE}
+# Computed joint CDF
+expect_joint <- function(t1, t2, t3, lambda = 1) {
+  1 - exp(- lambda * t1) - lambda * t1 * exp(-lambda * t2) - 
+    t1 * t2 * exp(-lambda * t3) + 1/2 * t1^2 *exp(- lambda * t3)
+}
+
+# Simulate 1000 realizations of S1, S2, S3
+sim <- function(t1, t2, t3, rate = 1, n = 1000) {
+  s1 <- rexp(n, rate)
+  s2 <- s1 + rexp(n, rate)
+  s3 <- s2 + rexp(n, rate)
+  
+  mean(s1 <= t1 & s2 <= t2 & s3 <= t3)
+}
+
+# P(S1 <= 1, S2 <= 2, S3 <= 3) with lambda = 1
+t1 <- 1
+t2 <- 2
+t3 <- 3
+rate <- 1
+# Replicate the simulation 1000 times
+sim_res <- replicate(1000, sim(t1, t2, t3, rate))
+
+cat("Simulated mean:", round(mean(sim_res), 3))
+cat("Expected joint distribution:", round(expect_joint(t1, t2, t3, rate), 3))
+```
+```

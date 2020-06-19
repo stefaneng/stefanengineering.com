@@ -1,4 +1,5 @@
 ---
+draft: true
 title: Poisson Process Simulation
 author: Stefan Eng
 date: '2020-05-19'
@@ -28,7 +29,7 @@ library(here)
 # knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
 
 # Don't show code by default
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = NA, message = FALSE)
 knitr::opts_knit$set(global.par = TRUE)
 
 # CB Palette like ESL
@@ -64,6 +65,8 @@ sim_poisson <- function(lambda = 1, t = 5) {
 ```{r}
 library(ggplot2)
 library(latex2exp)
+
+set.seed(13)
 
 plot_poisson <- function(wait_times) {
   n <- length(wait_times)

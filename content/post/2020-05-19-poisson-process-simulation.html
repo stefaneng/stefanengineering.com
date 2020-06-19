@@ -1,4 +1,5 @@
 ---
+draft: true
 title: Poisson Process Simulation
 author: Stefan Eng
 date: '2020-05-19'
@@ -25,9 +26,48 @@ bibliography: ../../static/bibtex/probability.bib
 <p>TODO: Definitions</p>
 <div id="simulation" class="section level3">
 <h3>Simulation</h3>
+<pre class="r"><code>sim_poisson &lt;- function(lambda = 1, t = 5) {
+  N &lt;- rpois(1, lambda * t)
+  wait_times &lt;- c(0, sort(runif(N, min = 0, max = t)))
+  interarrival &lt;- diff(wait_times)
+  
+  list(
+    N = N,
+    wait_times = wait_times,
+    interarrival = interarrival
+  )
+}</code></pre>
 </div>
 <div id="visualization" class="section level3">
 <h3>Visualization</h3>
+<pre class="r"><code>library(ggplot2)
+library(latex2exp)
+
+set.seed(13)
+
+plot_poisson &lt;- function(wait_times) {
+  n &lt;- length(wait_times)
+  df &lt;- data.frame(x = wait_times, y = seq(0, n-1))
+  df$xend &lt;- c(df$x[2:n], NA)
+  df$xstart &lt;- c(df$x[1:(n - 1)], NA)
+  
+  ggplot(df) +
+   geom_segment(aes(x = x, xend = xend, y = y, yend = y)) +
+   geom_segment(aes(x = x, xend = x, y = 0, yend = y), linetype=2, color=&quot;grey&quot;) +
+   geom_point(aes(x = x, y = y)) +
+   geom_point(aes(x = xend, y = y), shape = 21, fill = &quot;white&quot;) +
+   # Draw the segment
+   geom_segment(aes(x = max(wait_times), xend = max(wait_times) * 1.08, y = n - 1, yend = n - 1),
+                 arrow = arrow(length = unit(0.02, &quot;npc&quot;)),
+                 lineend = &quot;round&quot;, linejoin = &quot;bevel&quot;) +
+    scale_y_continuous(
+      breaks = seq(0, n)
+    ) +
+   ylab(&quot;N(t)&quot;) +
+   xlab(&quot;t&quot;)
+}
+
+plot_poisson(sim_poisson()$wait_times)</code></pre>
 <p><img src="/post/2020-05-19-poisson-process-simulation_files/figure-html/unnamed-chunk-2-1.png" width="480" /></p>
 </div>
 </div>

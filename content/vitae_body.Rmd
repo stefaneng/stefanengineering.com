@@ -16,7 +16,7 @@ citep(bib["cresst_eng2018"])
 ```
 
 ## Education
-  - *Current*: [Master’s Programme in Mathematical Sciences](https://www.chalmers.se/en/departments/math/education/university-of-gothenburg/programmes/mathematical-sciences/Pages/default.aspx) (Statistics) at Gothenburg University/Chalmers.
+  - [Master's degree in Mathematical Statistics](https://www.chalmers.se/en/departments/math/education/university-of-gothenburg/programmes/mathematical-sciences/Pages/default.aspx) at Gothenburg University.
   -  Bachelor of Science in Mathematics & Computer Science at California State University, Northridge
 
 ## Work Experience
@@ -61,7 +61,7 @@ presented with a web interface.
   - First place in CSUN's [Computer Science Senior Design Project Showcase 2016](https://csunshinetoday.csun.edu/science-and-technology/students-creative-talents-innovation-and-hard-work-highlighted-at-seventh-annual-senior-design-project-showcase/)
   - First Place in 2014 SS12 Code for a Cause Competition, a programming competition to create applications for people with disabilities.
   
-## Publications
+## Conferences
 
 ```{r bibliography, results = 'asis', echo = FALSE, cache = FALSE, warning = FALSE}
 ## Print bibliography

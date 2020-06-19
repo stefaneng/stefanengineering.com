@@ -1,0 +1,161 @@
+---
+draft: true
+title: Weight analysis
+author: Stefan Eng
+date: '2020-06-19'
+slug: weight-analysis
+categories:
+  - statistics
+tags:
+  - personal-data
+  - R
+  - time-series
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: yes
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+bibliography: ../../static/bibtex/probability.bib
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(sessioninfo) # for session_info()
+library(ggplot2)
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# My favorite theme
+theme_set(ggplot2::theme_minimal(base_size = 15, base_family = "Arial"))
+```
+
+```{r}
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(here)
+library(tidyr)
+library(forecast)
+```
+
+### Daylight
+
+```{r}
+time_entries <- readRDS(here('data/gu_toggl_entries.Rds'))
+sunrise <- readRDS(here('data/gbg_sunrise.Rds'))
+sunrise$date_str <- format(sunrise$date, "%Y-%m-%d")
+
+date_totals <- time_entries %>%
+  group_by(date_str) %>%
+  summarize(total_seconds = sum(duration),
+            total_hours = sum(duration) / 3600)
+
+hours_day_length <- left_join(date_totals, sunrise, by = "date_str") %>%
+  mutate(day_length_num = as.numeric(day_length) / 3600) %>%
+  select(date, total_hours, day_length_num)
+
+plot(hours_day_length$day_length_num, hours_day_length$total_hours)
+summary(lm(total_hours ~ day_length_num, data = hours_day_length))
+```
+
+### Weight
+```{r, cache=T}
+library(googlesheets4)
+weight <- read_sheet("https://docs.google.com/spreadsheets/d/1IqslSB8wSBfdAF3YtkX7fRZ0uTeeywqbEhKWkndCw2A/edit#gid=0")
+```
+
+```{r}
+running_date <- date("2019-10-7")
+
+day_order <- c("Monday", "Tuesday", "Wednesday", "Thursday","Friday", "Saturday", "Sunday")
+day_order_abbr <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+dates_seq <- seq(min(weight$date), max(weight$date), by = "day")
+  
+empty_lbs <- is.na(weight$`weight lbs`) & !is.na(weight$`weight kg`)
+weight[empty_lbs, "weight lbs"] <- weight$`weight kg`[empty_lbs] * 2.20462
+
+empty_kg <- !is.na(weight$`weight lbs`) & is.na(weight$`weight kg`)
+weight[empty_kg, "weight kg"] <- weight$`weight lbs`[empty_kg] / 2.20462
+
+weight$date_str <- format(weight$date, "%Y-%m-%d")
+
+# Include the days that I did not weigh myself
+filled_weight <- left_join(
+  data.frame(date = as.POSIXct.Date(dates_seq), date_str = format(dates_seq, "%Y-%m-%d"), stringsAsFactors = FALSE),
+  weight,
+  by = "date_str"
+)
+
+weight_joined <- full_join(filled_weight, sunrise, by = "date_str") %>%
+  full_join(date_totals, by = "date_str") %>%
+  mutate(day_length_num = as.numeric(day_length) / 3600,
+         weekday = factor(weekdays(date, abbreviate = T), levels = day_order_abbr)) %>%
+  rename(weight_kg = `weight kg`) %>%
+  select(date, weekday, total_hours, day_length_num, weight_kg) %>%
+  replace_na(list(total_hours = 0)) %>%
+  filter(date < today())
+
+lin_approx <- approxfun(weight_joined$date, weight_joined$weight_kg)
+
+weight_joined$weight_kg_lin <- lin_approx(weight_joined$date)
+# Moving averages for month and week on the linearly interpolated dataset
+weight_joined$moving_avg7 <- ma(weight_joined$weight_kg_lin, 7)
+weight_joined$moving_avg30 <- ma(weight_joined$weight_kg_lin, 30)
+
+df_sweden <- filter(weight_joined, date > date("2019-09-01"))
+
+# Much better range is from 2019-9-2 to today
+
+# Dumb model
+fit_arima <- auto.arima(weight_joined$weight_kg_lin)
+
+ggplot(weight_joined) +
+  geom_point(aes(x = date, y = weight_kg)) +
+  geom_line(aes(x = date, y = weight_kg_lin)) +
+  geom_line(aes(x = date, y = moving_avg7, color = "ma7"), size = 1) +
+  geom_line(aes(x = date, y = moving_avg30, color = "ma30"), size = 1)
+```
+
+```{r}
+fit_arima_filt <- auto.arima(df_sweden$weight_kg_lin)
+fit_ets_filt <- ets(df_sweden$weight_kg_lin)
+
+df_sweden$moving_avg7 <- ma(df_sweden$weight_kg_lin, 7)
+df_sweden$moving_avg30 <- ma(df_sweden$weight_kg_lin, 30)
+
+boxplot(weight_kg_lin - moving_avg7 ~ weekday, data = df_sweden)
+points(jitter(as.integer(df_sweden$weekday),0.5) , df_sweden$weight_kg_lin - df_sweden$moving_avg7 , pch = 21, cex = 0.7, bg = "white", col = "black" )
+summary(lm(weight_kg_lin - moving_avg7 ~ 0 + weekday, data = df_sweden))
+
+summary(fit_arima_filt)
+summary(fit_ets_filt)
+
+ggplot(df_sweden) +
+  geom_point(aes(x = date, y = weight_kg)) +
+  geom_line(aes(x = date, y = weight_kg_lin)) +
+  geom_line(aes(x = date, y = moving_avg7, color = "ma7"), size = 1) +
+  geom_line(aes(x = date, y = moving_avg30, color = "ma30"), size = 1)
+```
+
+## References
+
+## Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

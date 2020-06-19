@@ -1,0 +1,71 @@
+---
+draft: true
+title: Exponential Distribution
+author: Stefan Eng
+date: '2020-06-02'
+slug: exponential-distribution
+categories:
+  - math
+  - statistics
+tags:
+  - probability
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: yes
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+bibliography: ../../static/bibtex/probability.bib
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(sessioninfo) # for session_info()
+library(ggplot2)
+library(here)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# My favorite theme
+theme_set(ggplot2::theme_minimal(base_size = 15, base_family = "Arial"))
+```
+
+## Generating process
+As the number of N increases, the density converges to an exponential.
+
+See http://en.wikipedia.org/wiki/Order_statistic#Order_statistics_sampled_from_a_uniform_distribution
+```{r}
+x <- seq(0, 100, length.out = 1000)
+#plot(x, dexp(x, rate = 2), type = "l")
+
+N <- 5
+n <- 1e5
+
+xn <- replicate(n , min(runif( N , 1 , 100 )) )
+# Not really sure about this scaling...
+plot(density(N / 100 * xn))
+#hist(x2, probability = TRUE)
+lines(x, dexp(x, rate = 1), col = "red")
+```
+
+## References
+
+## Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

@@ -1,0 +1,101 @@
+---
+title: Poisson Process Simulation
+author: Stefan Eng
+date: '2020-05-19'
+slug: poisson-process-simulation
+categories:
+  - math
+  - R
+tags: []
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: true    
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+bibliography: ../../static/bibtex/probability.bib
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(sessioninfo) # for session_info()
+library(ggplot2)
+library(here)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# My favorite theme
+theme_set(ggplot2::theme_minimal(base_size = 15, base_family = "Arial"))
+```
+
+## Poisson Process
+[@ross1996stochastic]
+
+TODO: Definitions
+
+### Simulation
+```{r}
+sim_poisson <- function(lambda = 1, t = 5) {
+  N <- rpois(1, lambda * t)
+  wait_times <- c(0, sort(runif(N, min = 0, max = t)))
+  interarrival <- diff(wait_times)
+  
+  list(
+    N = N,
+    wait_times = wait_times,
+    interarrival = interarrival
+  )
+}
+```
+
+### Visualization
+```{r}
+library(ggplot2)
+library(latex2exp)
+
+plot_poisson <- function(wait_times) {
+  n <- length(wait_times)
+  df <- data.frame(x = wait_times, y = seq(0, n-1))
+  df$xend <- c(df$x[2:n], NA)
+  df$xstart <- c(df$x[1:(n - 1)], NA)
+  
+  ggplot(df) +
+   geom_segment(aes(x = x, xend = xend, y = y, yend = y)) +
+   geom_segment(aes(x = x, xend = x, y = 0, yend = y), linetype=2, color="grey") +
+   geom_point(aes(x = x, y = y)) +
+   geom_point(aes(x = xend, y = y), shape = 21, fill = "white") +
+   # Draw the segment
+   geom_segment(aes(x = max(wait_times), xend = max(wait_times) * 1.08, y = n - 1, yend = n - 1),
+                 arrow = arrow(length = unit(0.02, "npc")),
+                 lineend = "round", linejoin = "bevel") +
+    scale_y_continuous(
+      breaks = seq(0, n)
+    ) +
+   ylab("N(t)") +
+   xlab("t")
+}
+
+plot_poisson(sim_poisson()$wait_times)
+```
+
+## References
+
+## Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

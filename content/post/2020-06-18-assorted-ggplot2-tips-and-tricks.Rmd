@@ -1,0 +1,88 @@
+---
+draft: true
+title: Assorted ggplot2 tips and tricks
+author: Stefan Eng
+date: '2020-06-18'
+slug: assorted-ggplot2-tips-and-tricks
+categories:
+  - R
+tags:
+  - ggplot2
+  - visualization
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: yes
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+bibliography: ../../static/bibtex/probability.bib
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(sessioninfo) # for session_info()
+library(ggplot2)
+library(here)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# Based on minimal theme
+theme_set(
+  theme_minimal(base_size = 15, base_family = "Arial") %+replace%
+    theme(
+      plot.caption = element_text(size = 9, color = "gray50", hjust=1)
+      #panel.grid.major  = element_blank(),
+      # panel.grid.minor  = element_blank(),
+    )
+)
+```
+
+## Post content
+
+### Set custom theme features %+replace%
+```{r, eval = F}
+theme_set(
+  theme_minimal(base_size = 15, base_family = "Arial") %+replace%
+    theme(
+      plot.caption = element_text(size = 9, color = "gray50", hjust=1),
+      panel.grid.major  = element_blank(),
+      panel.grid.minor  = element_blank()
+    )
+)
+```
+
+###  Rotate x axis text 90 degrees
+From https://stackoverflow.com/a/1331400/1351718
+```{r, eval=F}
+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+### Adding site name caption
+```{r}
+ggplot(iris) +
+  geom_point(aes(x = Sepal.Width, y = Sepal.Length)) +
+  labs(caption = "stefanengineering.com") +
+  theme(plot.caption = element_text(size = 9, color = "gray50"))
+```
+
+## References
+
+## Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

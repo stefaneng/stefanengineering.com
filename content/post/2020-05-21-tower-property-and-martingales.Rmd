@@ -1,0 +1,93 @@
+---
+draft: true
+title: Tower property and Martingales
+author: Stefan Eng
+date: '2020-05-21'
+slug: tower-property-and-martingales
+categories:
+  - math
+tags:
+  - probability
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: yes
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+bibliography: ../../static/bibtex/probability.bib
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(sessioninfo) # for session_info()
+library(ggplot2)
+library(here)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# My favorite theme
+theme_set(ggplot2::theme_minimal(base_size = 15, base_family = "Arial"))
+```
+
+## Martingales
+
+A sequence $\{Y_n : n \geq 0\}$ is a **martingale** with respect to $\{X_n : n \geq 0\}$ if for all $n \geq 0$,
+  1. $E[|Y_n|] < \infty$
+  2. $E[Y_{n + 1} | X_1, \ldots, X_n] = Y_n$
+  
+If $E[Y_{n + 1} | X_1, \ldots, X_n] \leq Y_n$ then $\{Y_n\}$ is a **supermartingale** and if $E[Y_{n + 1} | X_1, \ldots, X_n] \geq Y_n$ then $\{Y_n\}$ is a **submartingale** [@grimmett2001].
+
+
+More generally, first we define a **filtration** as a sequence of sub-sigma-fields $\mathcal F_* = \{\mathcal F_0, \mathcal F_1, \ldots\}$ in which $\mathcal F_n \subseteq \mathcal F_{n + 1}$.
+A stochastic process $\{Y_n : n \geq 0\}$ is **adapted** to the filtration $\mathcal F_*$ if $Y_n$ is $\mathcal F_n$-measurable for all $n$.
+
+Let $\mathcal F_*$ be a _filtration_ of the probability space $(\Omega, \mathcal F, P)$.
+Assume that $\{Y_n : n \geq 0\}$ is _adapted_ to $\mathcal F_*$.
+
+### Tower Property
+$$
+E[X] = E[E[X|Y]]
+$$
+If we condition on $Y_1$, then by conditional probability properties we have
+$$
+E[E(X | Y_1, Y_2) | Y_1] = E[X | Y_1]
+$$
+
+More generally,
+$$
+E[X|\mathcal G] = E[E(X | \mathcal H) | \mathcal G] \quad \mathcal G \subseteq \mathcal H
+$$
+
+### Properties
+
+Assume that $\{Z_n : n \geq 1 \}$ is a martingale.
+Show that for $k \in [1, n)$
+$$
+E[Z_n | Z_1, \ldots, Z_k] = Z_k
+$$
+
+If $n = k + 1$, then by matingale properties $E[Z_{k + 1} | Z_1, \ldots, Z_k] = Z_k$.
+
+
+
+## References
+
+## Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

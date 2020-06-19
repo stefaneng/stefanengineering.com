@@ -1,0 +1,438 @@
+---
+draft: true
+title: Analysis of hours spent on Master's degree from toggl
+author: Stefan Eng
+date: '2020-06-12'
+slug: hours-spent-masters-degree-toggl
+categories:
+  - statistics
+  - school
+tags:
+  - R
+  - toggl
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: yes
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+## Load frequently used packages for blog posts
+library(knitcitations) # for citations
+library(sessioninfo) # for session_info()
+# library(ggplot2)
+# library(httr)
+# library(togglr)
+# library(lubridate)
+# library(tibble)
+# library(dplyr)
+# library(tidyr)
+# library(here)
+# library(forecast)
+# library(purrr)
+
+## For R images to display well in the RSS feed (disable for local preview)
+# knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
+
+# Don't show code by default
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, comment = NA, message = FALSE)
+knitr::opts_knit$set(global.par = TRUE)
+
+cleanbib()
+cite_options(hyperlink = 'to.doc', citation_format = 'text', style = 'html')
+
+bib <- list(
+    'blogdown' = citation('blogdown')[2],
+    'knitcitations' = citation('knitcitations'),
+    #'sessioninfo' = citation('sessioninfo'),
+    'togglr' = 'https://thinkr-open.github.io/togglr/',
+    'toggl' = 'https://toggl.com'
+)
+```
+
+## Introduction
+
+In this post I will show how to analyze data from [toggl](https://toggl.com) to visualzation the time that I spent on my Master's degree.
+I studied mathematical statistics at Gothenburg University from September 2018 to June 2020.
+I kept track of my hours using [toggl](https://toggl.com/). Unfortunately I did not keep track of the time spent at my lectures as I thought I could pull the data from a calendar later. So all of the time estimates are based on my outside of class studying. I generally study using the [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique) with a timer for 25 minutes. I would also stop the timer immediately if I checked my phone or got up for anything. This is clear from the data as there are lots of entries under 25 minutes. 
+
+```{r}
+library(togglr)
+library(tidyr)
+library(lubridate)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(scales)
+```
+
+## Extracting Data from Toggl
+First we pull the data from toggl using the R package [togglr](https://github.com/ThinkR-open/togglr).
+I have each one of my courses as a separate project on toggl so first I create a tribble of the meta data for each course.
+The abbriviation 
+
+```{r, cache=T}
+courses <- tribble(
+  ~course, ~short_name, ~semester, ~period, ~study_year,
+  "Statistical Learning", "Statistical Learning", "VT", 2, 1,
+  "Time Series", "Time Series", "VT", 2, 1,
+  "Foundations of probability theory", "Probability Theory", "HT", 2, 1,
+  "Bayesian Stats Chalmers", "Bayesian Stats", "HT", 1, 1,
+  "Linear Statistical Models", "Linear Models", "HT", 2, 1,
+  "Linear Mixed Models for Longitudinal Data", "Linear Mixed Models", "VT", 1, 1,
+  "Machine Learning GU", "Machine Learning (NLP)", "HT", 1, 1,
+  "Experimental design and sampling", "Experimental Design", "VT", 1, 1,
+  "Time Series", "Time Series", "VT", 2, 1,
+  "Perspectives in Mathematics", "Math History", "HT", 2, 1,
+  "Integration Theory", "Integration Theory", "HT", 1, 2,
+  "Functional Analysis", "Functional Analysis", "HT", 2, 2,
+  "Topology", "Topology", "VT", 1, 2,
+  "Master's Thesis", "Thesis", "", NA, 2
+)
+
+schedule <- tribble(
+  ~semester, ~period, ~study_year, ~int,
+  "HT", 1, 1, as.POSIXct("2018-09-03", tz = "CET") %--% as.POSIXct("2018-11-05", tz = "CET"),
+  "HT", 2, 1, as.POSIXct("2018-11-05", tz = "CET") %--% as.POSIXct("2019-01-20", tz = "CET"),
+  "VT", 1, 1, as.POSIXct("2019-01-20", tz = "CET") %--% as.POSIXct("2019-03-23", tz = "CET"),
+  "VT", 2, 1, as.POSIXct("2019-03-25", tz = "CET") %--% as.POSIXct("2019-06-20", tz = "CET"),
+  "HT", 1, 2, as.POSIXct("2019-09-02", tz = "CET") %--% as.POSIXct("2019-11-04", tz = "CET"),
+  "HT", 2, 2, as.POSIXct("2019-11-04", tz = "CET") %--% as.POSIXct("2020-01-18", tz = "CET"),
+  "VT", 1, 2, as.POSIXct("2020-01-20", tz = "CET") %--% as.POSIXct("2020-03-21", tz = "CET"),
+  "VT", 2, 2, as.POSIXct("2020-03-23", tz = "CET") %--% as.POSIXct("2020-06-10", tz = "CET"),
+)
+
+# Add an id to each row
+period_ids <- 1:nrow(schedule)
+schedule$period_key <- period_ids
+
+# Get the time entries by month since I have a lot of them
+start_day <- date("2018-08-28")
+last_day <- date("2020-06-14")
+
+# Divide the days into 8 intervals
+# Toggl api only returns 1000 entries so need to partition date range
+seg <- 8
+time_interval <- seq(start_day, last_day, length.out = seg)
+
+since = time_interval[-seg]
+until = time_interval[-1]
+
+time_entries_list <- lapply(2:seg, function(i) {
+  togglr::get_time_entries(since = time_interval[i - 1], until = time_interval[i])
+})
+
+toggl_df <- do.call(plyr::rbind.fill, time_entries_list) %>%
+  dplyr::rename(course = project_name)
+
+toggl_joined <- inner_join(toggl_df, courses, by = "course")
+
+toggl_simple <- select(toggl_joined, start, stop, short_name, description, duration, semester, period, study_year) %>%
+  mutate(start = with_tz(start, tzone = "CET"), stop = with_tz(stop, tzone = "CET")) %>%
+   dplyr::rename(course = short_name)
+
+toggl_simple$period_key <- unlist(lapply(toggl_simple$start, function(s) {
+  cond = s %within% schedule$int
+  matches = sum(cond)
+  if(matches == 0) {
+    NA
+  } else if(matches > 1) {
+    warning("Found multiple matches")
+    period_ids[cond]
+  } else {
+    period_ids[cond]
+  }
+}))
+
+day_order_abbr <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+time_entries <- left_join(toggl_simple, schedule, by = "period_key") %>%
+  mutate(
+    semester = if_else(is.na(semester.x) | semester.x == "", semester.y, semester.x),
+    period = if_else(is.na(period.x), period.y, period.x),
+    study_year = if_else(is.na(study_year.x), study_year.y, study_year.x),
+    ) %>%
+  select(start, stop, course, description, duration, semester, period, study_year) %>%
+  # Remove all duplicates
+  distinct(start, stop, .keep_all = T) %>%
+  mutate(date = format(start, "%Y-%m-%d"),
+         weekday = factor(weekdays(start, abbreviate = T), levels = day_order_abbr))
+```
+
+### Daily Totals
+```{r}
+# All days in school
+md <- mapply(seq, from = int_start(schedule$int), to = int_end(schedule$int), by = 'day')
+# All the days in each semester with meta data
+md_meta <- lapply(seq_along(md), function(i) {
+  cbind(
+    data.frame(date = format(md[[i]], "%Y-%m-%d"),
+               weekday = factor(weekdays(md[[i]], abbreviate = T), levels = day_order_abbr),
+               stringsAsFactors = FALSE),
+    schedule[rep(i, length(md[[i]])),]
+  )
+  })
+
+school_days <- do.call("rbind", md_meta)
+
+# Fill the missing days with 0
+daily_entries <- time_entries %>%
+  group_by(date) %>%
+  # Ensure we use dplyr summarize instead of plyr
+  dplyr::summarize(total_hours = sum(duration) / 3600) %>%
+  right_join(school_days, by = "date") %>%
+  replace_na(list(total_hours = 0))
+```
+
+## 
+
+```{r}
+sum_stats <- time_entries %>%
+  unite(quarter, semester, period, sep = "") %>%
+  group_by(course, quarter, study_year) %>%
+  summarize(
+    n = n(),
+    total_time_hours = sum(duration) / 3600,
+    mean_time_minutes = mean(duration) / 60,
+  )
+
+# Add the total hours spent on each course
+# Only useful for thesis that spans multiple reading periods
+sum_stats_course <- sum_stats %>%
+  group_by(course, study_year) %>%
+  summarize(
+    total_time_course = sum(total_time_hours)
+  )
+
+sum_stats <- left_join(sum_stats, sum_stats_course, by = "course") %>%
+  arrange(course, quarter)
+
+sum_stats$cumsum <- sum_stats$total_time_hours
+thesis_cond <- sum_stats$course == "Thesis"
+# Update total hours in thesis to cumsum
+sum_stats[thesis_cond, "cumsum"] <- cumsum(sum_stats[thesis_cond,"total_time_hours"])
+```
+
+## Summary
+
+Time spent per year
+```{r}
+time_entries %>%
+  group_by(study_year) %>%
+  summarize(total_hours = sum(duration) / 3600) %>%
+  kable(digits = 1, col.names = c("Study Year", "Total Hours"))
+```
+
+First set some colors and theme
+```{r}
+# CB Palette like ESL
+cbPalette <- c(
+  "#999999", "#E69F00", "#56B4E9", "#009E73",
+  "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+theme_set(
+  theme_minimal(base_size = 15, base_family = "Arial") %+replace%
+    theme(
+      plot.caption = element_text(size = 9, color = "gray50", hjust = 1)
+    )
+)
+```
+
+\@ref(fig:hours-per-course-quarter)
+
+```{r hours-per-course-quarter, fig.cap="Total hours spent on each course by quarter", fig.width=8}
+# Per course
+ggplot(sum_stats) +
+  geom_bar(
+    aes(x = reorder(course, total_time_course), y = total_time_hours, fill=quarter),   stat="identity", position = position_stack(reverse = TRUE)) +
+  geom_text(
+    aes(x = course, y = cumsum, label = round(cumsum)),
+    hjust = 1,
+    nudge_y = -1,
+    size = 6
+  ) +
+  coord_flip() +
+  labs(
+    title = "Hours spent on each course by quarter",
+    caption = "stefanengineering.com",
+    x = NULL,
+    y = "Total Time (Hours)"
+    ) +
+  theme(
+    panel.grid.major  = element_blank(),
+    panel.grid.minor  = element_blank(),
+    legend.position = c(0.85,0.25),
+    legend.box.background = element_rect(colour = "black")
+  ) +
+  scale_fill_manual(values = cbPalette[-1])
+```
+
+```{r hours-per-course-year, fig.cap="Total hours spent on each course by year", fig.width=8}
+# Per course
+ggplot(sum_stats_course) +
+  geom_bar(
+    aes(x = reorder(course, total_time_course), y = total_time_course, fill=as.factor(study_year)), stat="identity") +
+  geom_text(
+    aes(x = course, y = total_time_course, label = round(total_time_course)),
+    hjust = 1,
+    nudge_y = -1,
+    size = 6
+  ) +
+  coord_flip() +
+  labs(
+    title = "Hours spent on each course by year",
+    caption = "stefanengineering.com",
+    x = NULL,
+    y = "Total Time (Hours)"
+    ) +
+  theme(
+    panel.grid.major  = element_blank(),
+    panel.grid.minor  = element_blank(),
+    legend.position = c(0.85,0.25),
+    legend.box.background = element_rect(colour = "black")
+  ) +
+  scale_fill_manual(values = cbPalette[-1], name = "Year")
+```
+
+By period
+```{r}
+time_entries %>%
+  group_by(study_year, semester, period) %>%
+  summarize(hours = sum(duration)/3600) %>%
+  unite(quarter, semester, period, sep = "") %>%
+ggplot(.) +
+geom_bar(aes(x = quarter, y = hours, fill = as.factor(study_year)), position = "dodge", stat = "identity") +
+  scale_fill_manual(values = cbPalette[-1], name = "Year") +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  labs(title = "Hours per quarter",
+       caption = "stefanengineering.com")
+```
+
+
+
+### Calendar
+Using `calendarPlot` from the `openair` package we can display the number of hours per day on a calendar.
+The days with 0 hours spent studying are marked as grey while the white squares are not part of that quarter.
+```{r}
+max_time <- max(daily_entries$total_hours)
+
+daily_entries %>%
+  group_by(study_year, semester, period) %>%
+  mutate(date = date(date)) %>%
+  group_walk(~ openair::calendarPlot(.x, 
+                 pollutant = "total_hours", year = c(2018, 2019, 2020), 
+                 # Start with Monday
+                 w.shift = 2,
+                 # Force all plots to have the same limits
+                 limits = c(0, max_time),
+                 # Set the 0 to be grey so we can see the missed days
+                 cols = c("#DCDCDC", tail(openair::openColours(), n=50)),
+                 main = paste0("Year ", .y["study_year"], " ", .y["semester"], .y["period"]))) %>%
+  invisible()
+```
+
+### Study streaks
+After looking at the calendar graphs I wanted to see what the longest streaks I had for studying and for breaks.
+```{r}
+run_df <- daily_entries %>%
+  mutate(studied = total_hours > 0) %>%
+  group_by(study_year, semester, period) %>%
+  # Compute the start/end days for runs
+  # Modified from https://stackoverflow.com/a/46961802/1351718
+  group_map(~with(rle(.x$studied),
+                  data.frame(is_study = values,
+                             length = lengths,
+                             start = .x$date[cumsum(lengths) - lengths + 1],
+                             end = .x$date[cumsum(lengths)],
+                             # Add the group variables
+                             .y
+                             )[order(-lengths),]))
+
+toprun_lst <- lapply(run_df, function(x) {
+  s <- x[x$is_study,]
+  b <- x[!x$is_study,]
+  rbind(
+    s[which.max(s$length),],
+    b[which.max(b$length),]
+  )
+})
+
+toprun_df <- do.call("rbind", toprun_lst)
+row.names(toprun_df) <- NULL
+
+toprun_df %>% 
+  arrange(study_year, semester, period) %>%
+  mutate(quarter = paste0("Y", study_year, " ", semester, period)) %>%
+  select(is_study, length, quarter) %>%
+  group_by(is_study) %>%
+  group_walk(~print(ggplot(.x) +
+               geom_bar(aes(x = quarter, y = length),
+                        fill = cbPalette[3],
+                        stat="identity") +
+               ggtitle(ifelse(.y, "Study streak", "Days off streak")) +
+               theme(
+                 axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+                 panel.grid.major.x = element_blank(),
+                 panel.grid.minor.x = element_blank()
+                 )
+               )
+             ) %>%
+  invisible()
+```
+
+### When was I studying?
+```{r, cache=T}
+time_seq <- function(dates, entries, by = "1 min") {
+  ds <- seq(dates[1], dates[1] + days(1), by = by)
+  res <- NULL
+  # Alternatively could use group_by, group_walk/group_map
+  for(i in seq_along(dates)) {
+    d <- dates[i]
+    # Set the date. This prevents the sequences from having different lengths due to leap
+    date(ds) <- d
+    d_entries <- filter(entries, date == d)
+    # Compute overlap of time entries for one date
+    r <- unlist(lapply(ds, function(td) {
+      sum(td >= d_entries$start & td <= d_entries$stop)
+    }))
+    # Add to the result
+    if(is.null(res)) res <- r
+    else res <- res + r
+  }
+  list(count = res,
+       date = ds)
+}
+
+#time_df <- data.frame(time_seq(unique(time_entries$date), time_entries))
+#time_df5 <- data.frame(time_seq(unique(time_entries$date), time_entries, by = "5 min"))
+ti <- 10
+time_df <- data.frame(time_seq(unique(floor_date(time_entries$start, unit = "day")), time_entries, by = paste(ti, "min")))
+
+ggplot(time_df) +
+  geom_bar(aes(x = date, y = count), stat = "identity", width = ti * 60) +
+  scale_x_datetime(breaks = "3 hour", labels=date_format("%H:%M")) +
+  ylab("count") +
+  xlab("time")
+```
+
+
+It is easy to the effect on the number of events close to 25 minutes. 
+```{r}
+ggplot(data.frame(minutes = time_entries$duration / 60)) +
+  geom_histogram(aes(x = minutes), bins = 50)
+```
+
+## References
+
+## Reproducibility
+
+```{r reproducibility, echo = FALSE}
+## Reproducibility info
+options(width = 120)
+session_info()
+```

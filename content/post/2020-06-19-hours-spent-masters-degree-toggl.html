@@ -1,0 +1,555 @@
+---
+title: Analysis of hours spent on Master's degree
+author: Stefan Eng
+date: '2020-06-19'
+slug: hours-spent-masters-degree-toggl
+categories:
+  - statistics
+  - school
+tags:
+  - R
+  - toggl
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: yes
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+---
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this post I will show how to analyze data from <a href="https://toggl.com">toggl</a> to visualzation the time that I spent on my Master’s degree.
+I studied mathematical statistics at Gothenburg University from September 2018 to June 2020.
+I kept track of my hours using <a href="https://toggl.com/">toggl</a>. Unfortunately I did not keep track of the time spent at my lectures as I thought I could pull the data from a calendar later.
+So all of the time estimates are based on my outside of class studying. I generally study using the <a href="https://en.wikipedia.org/wiki/Pomodoro_Technique">Pomodoro Technique</a> with a timer for 25 minutes. I would also stop the timer immediately if I checked my phone or got up for anything. This is clear from the data as there are lots of entries under 25 minutes.
+We’ll first go over extracting the data from toggl and then some visualizations.</p>
+<div id="setup" class="section level3">
+<h3>Setup</h3>
+<pre class="r"><code>library(togglr)
+library(tidyr)
+library(lubridate)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(scales)
+library(knitr)</code></pre>
+</div>
+</div>
+<div id="extracting-data-from-toggl" class="section level2">
+<h2>Extracting Data from Toggl</h2>
+<p>First we pull the data from toggl using the R package <a href="https://github.com/ThinkR-open/togglr">togglr</a>.
+I have each one of my courses as a separate project on toggl so first I create a tribble of the meta data for each course.
+Each course is 50% time and taking two classes a quarter (four a semester) is full time.
+The abbriviation HT is Hösttermin which means fall semester and VT = Vårtermin which means spring semester.
+Each of the semesters are divided into two parts, 1 and 2.
+So an entire year consists of the reading periods HT1, HT2, VT1, VT2 spanning about 10 weeks.
+Now we will dive in to extracting and processing the data from toggl.</p>
+<pre class="r"><code>courses &lt;- tribble(
+  ~course, ~short_name, ~semester, ~period, ~study_year,
+  &quot;Statistical Learning&quot;, &quot;Statistical Learning&quot;, &quot;VT&quot;, 2, 1,
+  &quot;Time Series&quot;, &quot;Time Series&quot;, &quot;VT&quot;, 2, 1,
+  &quot;Foundations of probability theory&quot;, &quot;Probability Theory&quot;, &quot;HT&quot;, 2, 1,
+  &quot;Bayesian Stats Chalmers&quot;, &quot;Bayesian Stats&quot;, &quot;HT&quot;, 1, 1,
+  &quot;Linear Statistical Models&quot;, &quot;Linear Models&quot;, &quot;HT&quot;, 2, 1,
+  &quot;Linear Mixed Models for Longitudinal Data&quot;, &quot;Linear Mixed Models&quot;, &quot;VT&quot;, 1, 1,
+  &quot;Machine Learning GU&quot;, &quot;Machine Learning (NLP)&quot;, &quot;HT&quot;, 1, 1,
+  &quot;Experimental design and sampling&quot;, &quot;Experimental Design&quot;, &quot;VT&quot;, 1, 1,
+  &quot;Time Series&quot;, &quot;Time Series&quot;, &quot;VT&quot;, 2, 1,
+  &quot;Perspectives in Mathematics&quot;, &quot;Math History&quot;, &quot;HT&quot;, 2, 1,
+  &quot;Integration Theory&quot;, &quot;Integration Theory&quot;, &quot;HT&quot;, 1, 2,
+  &quot;Functional Analysis&quot;, &quot;Functional Analysis&quot;, &quot;HT&quot;, 2, 2,
+  &quot;Topology&quot;, &quot;Topology&quot;, &quot;VT&quot;, 1, 2,
+  &quot;Master&#39;s Thesis&quot;, &quot;Thesis&quot;, &quot;&quot;, NA, 2
+)
+
+schedule &lt;- tribble(
+  ~semester, ~period, ~study_year, ~int,
+  &quot;HT&quot;, 1, 1, as.POSIXct(&quot;2018-09-03&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2018-11-05&quot;, tz = &quot;CET&quot;),
+  &quot;HT&quot;, 2, 1, as.POSIXct(&quot;2018-11-05&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2019-01-20&quot;, tz = &quot;CET&quot;),
+  &quot;VT&quot;, 1, 1, as.POSIXct(&quot;2019-01-20&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2019-03-23&quot;, tz = &quot;CET&quot;),
+  &quot;VT&quot;, 2, 1, as.POSIXct(&quot;2019-03-25&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2019-06-20&quot;, tz = &quot;CET&quot;),
+  &quot;HT&quot;, 1, 2, as.POSIXct(&quot;2019-09-02&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2019-11-04&quot;, tz = &quot;CET&quot;),
+  &quot;HT&quot;, 2, 2, as.POSIXct(&quot;2019-11-04&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2020-01-18&quot;, tz = &quot;CET&quot;),
+  &quot;VT&quot;, 1, 2, as.POSIXct(&quot;2020-01-20&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2020-03-21&quot;, tz = &quot;CET&quot;),
+  &quot;VT&quot;, 2, 2, as.POSIXct(&quot;2020-03-23&quot;, tz = &quot;CET&quot;) %--% as.POSIXct(&quot;2020-06-10&quot;, tz = &quot;CET&quot;),
+)
+
+# Add an id to each row
+period_ids &lt;- 1:nrow(schedule)
+schedule$period_key &lt;- period_ids
+
+# Get the time entries by month since I have a lot of them
+start_day &lt;- date(&quot;2018-08-28&quot;)
+last_day &lt;- date(&quot;2020-06-14&quot;)
+
+# Divide the days into 8 intervals
+# Toggl api only returns 1000 entries so need to partition date range
+seg &lt;- 8
+time_interval &lt;- seq(start_day, last_day, length.out = seg)
+
+since = time_interval[-seg]
+until = time_interval[-1]
+
+# Use the toggl api to get the time entries
+time_entries_list &lt;- lapply(2:seg, function(i) {
+  togglr::get_time_entries(since = time_interval[i - 1], until = time_interval[i])
+})
+
+# Use rbind.fill to create columns if they do not exist
+toggl_df &lt;- do.call(plyr::rbind.fill, time_entries_list) %&gt;%
+  dplyr::rename(course = project_name)
+
+toggl_joined &lt;- inner_join(toggl_df, courses, by = &quot;course&quot;)
+
+toggl_simple &lt;- select(toggl_joined, start, stop, short_name, description, duration, semester, period, study_year) %&gt;%
+  mutate(start = with_tz(start, tzone = &quot;CET&quot;), stop = with_tz(stop, tzone = &quot;CET&quot;)) %&gt;%
+   dplyr::rename(course = short_name)
+
+toggl_simple$period_key &lt;- unlist(lapply(toggl_simple$start, function(s) {
+  cond = s %within% schedule$int
+  matches = sum(cond)
+  if(matches == 0) {
+    NA
+  } else if(matches &gt; 1) {
+    warning(&quot;Found multiple matches&quot;)
+    period_ids[cond]
+  } else {
+    period_ids[cond]
+  }
+}))
+
+day_order_abbr &lt;- c(&quot;Mon&quot;, &quot;Tue&quot;, &quot;Wed&quot;, &quot;Thu&quot;, &quot;Fri&quot;, &quot;Sat&quot;, &quot;Sun&quot;)
+
+time_entries &lt;- left_join(toggl_simple, schedule, by = &quot;period_key&quot;) %&gt;%
+  mutate(
+    semester = if_else(is.na(semester.x) | semester.x == &quot;&quot;, semester.y, semester.x),
+    period = if_else(is.na(period.x), period.y, period.x),
+    study_year = if_else(is.na(study_year.x), study_year.y, study_year.x),
+    ) %&gt;%
+  select(start, stop, course, description, duration, semester, period, study_year) %&gt;%
+  # Remove all duplicates
+  distinct(start, stop, .keep_all = T) %&gt;%
+  mutate(date = format(start, &quot;%Y-%m-%d&quot;),
+         weekday = factor(weekdays(start, abbreviate = T), levels = day_order_abbr))</code></pre>
+<p>Now we have a nicely formatted data frame of the time entries for all my course entries.
+Next we want to summarize the total time by each day.</p>
+<div id="daily-totals" class="section level3">
+<h3>Daily Totals</h3>
+<p>The naïve way creating daily totals would be to just group by date.
+One issue with this approach is that it ignores the dates in which I didn’t do any studying.
+I want any date that is in a quarter to be in the data set but with an <code>NA</code> or <code>0</code> for the daily total.
+We do this below by creating date sequences for each quarter.
+Then we join this to the original time entries to fill in the gaps of study days.</p>
+<pre class="r"><code># All days in school
+md &lt;- mapply(seq, from = int_start(schedule$int), to = int_end(schedule$int), by = &#39;day&#39;)
+
+# All the days in each semester with meta data
+md_meta &lt;- lapply(seq_along(md), function(i) {
+  cbind(
+    data.frame(date = format(md[[i]], &quot;%Y-%m-%d&quot;),
+               weekday = factor(weekdays(md[[i]], abbreviate = T), levels = day_order_abbr),
+               stringsAsFactors = FALSE),
+    schedule[rep(i, length(md[[i]])),]
+  )
+})
+
+school_days &lt;- do.call(&quot;rbind&quot;, md_meta)
+
+# Fill the missing days with 0
+daily_entries &lt;- time_entries %&gt;%
+  group_by(date) %&gt;%
+  # Ensure we use dplyr summarize instead of plyr
+  dplyr::summarize(total_hours = sum(duration) / 3600) %&gt;%
+  right_join(school_days, by = &quot;date&quot;) %&gt;%
+  replace_na(list(total_hours = 0))</code></pre>
+</div>
+</div>
+<div id="basic-summary-statistics" class="section level2">
+<h2>Basic summary statistics</h2>
+<p>Now we can create a data frame with some basic summary statistics from the data.
+Don’t worry about the content of these yet as we will be plotting them later.</p>
+<pre class="r"><code>sum_stats &lt;- time_entries %&gt;%
+  unite(quarter, semester, period, sep = &quot;&quot;) %&gt;%
+  group_by(course, quarter, study_year) %&gt;%
+  summarize(
+    n = n(),
+    total_time_hours = sum(duration) / 3600,
+    mean_time_minutes = mean(duration) / 60,
+  )
+
+# Add the total hours spent on each course
+# Only useful for thesis that spans multiple reading periods
+sum_stats_course &lt;- sum_stats %&gt;%
+  group_by(course, study_year) %&gt;%
+  summarize(
+    total_time_course = sum(total_time_hours)
+  )
+
+sum_stats &lt;- left_join(sum_stats, sum_stats_course, by = &quot;course&quot;) %&gt;%
+  arrange(course, quarter)
+
+sum_stats$cumsum &lt;- sum_stats$total_time_hours
+thesis_cond &lt;- sum_stats$course == &quot;Thesis&quot;
+# Update total hours in thesis to cumsum
+sum_stats[thesis_cond, &quot;cumsum&quot;] &lt;- cumsum(sum_stats[thesis_cond,&quot;total_time_hours&quot;])</code></pre>
+<div id="time-spent-per-year" class="section level3">
+<h3>Time spent per year</h3>
+<p>I spent about 77 more hours in my second year than the first.
+It seems like that should be even higher but that was probably due to more work on personal projects.
+I didn’t record those hours as rigorously as my course work entries but it would be interesting to look at those as well.</p>
+<pre class="r"><code>time_entries %&gt;%
+  group_by(study_year) %&gt;%
+  summarize(total_hours = sum(duration) / 3600) %&gt;%
+  kable(digits = 1, col.names = c(&quot;Study Year&quot;, &quot;Total Hours&quot;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Study Year</th>
+<th align="right">Total Hours</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">484.3</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">560.7</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="visualizations" class="section level2">
+<h2>Visualizations</h2>
+<p>First set some colors and theme</p>
+<pre class="r"><code># CB Palette like ESL
+cbPalette &lt;- c(
+  &quot;#999999&quot;, &quot;#E69F00&quot;, &quot;#56B4E9&quot;, &quot;#009E73&quot;,
+  &quot;#F0E442&quot;, &quot;#0072B2&quot;, &quot;#D55E00&quot;, &quot;#CC79A7&quot;)
+
+theme_set(
+  theme_minimal(base_size = 15, base_family = &quot;Arial&quot;) %+replace%
+    theme(
+      plot.caption = element_text(size = 9, color = &quot;gray50&quot;, hjust = 1)
+    )
+)</code></pre>
+<pre class="r"><code># Per course
+ggplot(sum_stats) +
+  geom_bar(
+    aes(x = reorder(course, total_time_course), y = total_time_hours, fill=quarter),   stat=&quot;identity&quot;, position = position_stack(reverse = TRUE)) +
+  geom_text(
+    aes(x = course, y = cumsum, label = round(cumsum)),
+    hjust = 1,
+    nudge_y = -1,
+    size = 6
+  ) +
+  coord_flip() +
+  labs(
+    title = &quot;Hours spent on each course by quarter&quot;,
+    caption = &quot;stefanengineering.com&quot;,
+    x = NULL,
+    y = &quot;Total Time (Hours)&quot;
+    ) +
+  theme(
+    panel.grid.major  = element_blank(),
+    panel.grid.minor  = element_blank(),
+    legend.position = c(0.85,0.25),
+    legend.box.background = element_rect(colour = &quot;black&quot;)
+  ) +
+  scale_fill_manual(values = cbPalette[-1])</code></pre>
+<div class="figure"><span id="fig:hours-per-course-quarter"></span>
+<img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/hours-per-course-quarter-1.png" alt="Total hours spent on each course by quarter" width="768" />
+<p class="caption">
+Figure 1: Total hours spent on each course by quarter
+</p>
+</div>
+<p>In Figure <a href="#fig:hours-per-course-year">2</a> we see the total hours that I spent on each course, colored by year.
+The second year courses were all math courses compared with the first year when I took all statistics courses.
+I took integration theory without any other courses and spent much more time than other courses.
+Similarly for functional analysis I focused essentially 100% of my time on it.
+Overall both of these ended up being more than double the time I would spent on a statistic course which was about 58 hours in median.
+Interestingly, I spent much less time on topology which is the other math course I took.
+This was due to the fact that I had to learn topology for functional analysis any way so it was much easier as a result.</p>
+<pre class="r"><code># Per course
+ggplot(sum_stats_course) +
+  geom_bar(
+    aes(x = reorder(course, total_time_course), y = total_time_course, fill=as.factor(study_year)), stat=&quot;identity&quot;) +
+  geom_text(
+    aes(x = course, y = total_time_course, label = round(total_time_course)),
+    hjust = 1,
+    nudge_y = -1,
+    size = 6
+  ) +
+  coord_flip() +
+  labs(
+    title = &quot;Hours spent on each course by year&quot;,
+    caption = &quot;stefanengineering.com&quot;,
+    x = NULL,
+    y = &quot;Total Time (Hours)&quot;
+    ) +
+  theme(
+    panel.grid.major  = element_blank(),
+    panel.grid.minor  = element_blank(),
+    legend.position = c(0.85,0.25),
+    legend.box.background = element_rect(colour = &quot;black&quot;)
+  ) +
+  scale_fill_manual(values = cbPalette[-1], name = &quot;Year&quot;)</code></pre>
+<div class="figure"><span id="fig:hours-per-course-year"></span>
+<img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/hours-per-course-year-1.png" alt="Total hours spent on each course by year" width="768" />
+<p class="caption">
+Figure 2: Total hours spent on each course by year
+</p>
+</div>
+<p>Looking at the data by quarter was the most interesting for me.
+It is clear from this that I spent more time in every quarter during the second year.
+Also, the first quarter of spring is massively much less time than the other quarters.
+Especially the first year but the second year as well I had a really hard time adjusting to the swedish winters.</p>
+<pre class="r"><code>time_entries %&gt;%
+  group_by(study_year, semester, period) %&gt;%
+  summarize(hours = sum(duration)/3600) %&gt;%
+  unite(quarter, semester, period, sep = &quot;&quot;) %&gt;%
+ggplot(.) +
+geom_bar(aes(x = quarter, y = hours, fill = as.factor(study_year)), position = &quot;dodge&quot;, stat = &quot;identity&quot;) +
+  scale_fill_manual(values = cbPalette[-1], name = &quot;Year&quot;) +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()) +
+  labs(title = &quot;Hours per quarter&quot;,
+       caption = &quot;stefanengineering.com&quot;)</code></pre>
+<p><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-7-1.png" width="768" /></p>
+<div id="calendar" class="section level3">
+<h3>Calendar</h3>
+<p>Using <code>calendarPlot</code> from the <code>openair</code> package we can display the number of hours per day on a calendar.
+The days with 0 hours spent studying are marked as grey while the white squares are not part of that quarter.</p>
+<pre class="r"><code>max_time &lt;- max(daily_entries$total_hours)
+
+daily_entries %&gt;%
+  group_by(study_year, semester, period) %&gt;%
+  mutate(date = date(date)) %&gt;%
+  group_walk(~ openair::calendarPlot(.x, 
+                 pollutant = &quot;total_hours&quot;, year = c(2018, 2019, 2020), 
+                 # Start with Monday
+                 w.shift = 2,
+                 # Force all plots to have the same limits
+                 limits = c(0, max_time),
+                 # Set the 0 to be grey so we can see the missed days
+                 cols = c(&quot;#DCDCDC&quot;, tail(openair::openColours(), n=50)),
+                 main = paste0(&quot;Year &quot;, .y[&quot;study_year&quot;], &quot; &quot;, .y[&quot;semester&quot;], .y[&quot;period&quot;]))) %&gt;%
+  invisible()</code></pre>
+<p><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-1.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-2.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-3.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-4.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-5.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-6.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-7.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-8-8.png" width="480" /></p>
+</div>
+<div id="study-streaks" class="section level3">
+<h3>Study streaks</h3>
+<p>After looking at the calendar graphs I wanted to see what the longest streaks I had for studying and for breaks.
+I never tried to keep a streak alive at any point but I did end up with quite a few long ones.
+My longest streak was 32 days of work and my longest break was 11 days when I went home for Easter break.</p>
+<pre class="r"><code>run_df &lt;- daily_entries %&gt;%
+  mutate(studied = total_hours &gt; 0) %&gt;%
+  group_by(study_year, semester, period) %&gt;%
+  # Compute the start/end days for runs
+  # Modified from https://stackoverflow.com/a/46961802/1351718
+  group_map(~with(rle(.x$studied),
+                  data.frame(is_study = values,
+                             length = lengths,
+                             start = .x$date[cumsum(lengths) - lengths + 1],
+                             end = .x$date[cumsum(lengths)],
+                             # Add the group variables
+                             .y
+                             )[order(-lengths),]))
+
+toprun_lst &lt;- lapply(run_df, function(x) {
+  s &lt;- x[x$is_study,]
+  b &lt;- x[!x$is_study,]
+  rbind(
+    s[which.max(s$length),],
+    b[which.max(b$length),]
+  )
+})
+
+toprun_df &lt;- do.call(&quot;rbind&quot;, toprun_lst)
+row.names(toprun_df) &lt;- NULL
+
+toprun_df %&gt;% 
+  arrange(study_year, semester, period) %&gt;%
+  mutate(quarter = paste0(&quot;Y&quot;, study_year, &quot; &quot;, semester, period)) %&gt;%
+  select(is_study, length, quarter) %&gt;%
+  group_by(is_study) %&gt;%
+  group_walk(~print(ggplot(.x) +
+               geom_bar(aes(x = quarter, y = length),
+                        fill = cbPalette[3],
+                        stat=&quot;identity&quot;) +
+               ggtitle(ifelse(.y, &quot;Study streak&quot;, &quot;Days off streak&quot;)) +
+               theme(
+                 axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+                 panel.grid.major.x = element_blank(),
+                 panel.grid.minor.x = element_blank()
+                 )
+               )
+             ) %&gt;%
+  invisible()</code></pre>
+<p><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-9-1.png" width="480" /><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-9-2.png" width="480" /></p>
+</div>
+<div id="when-was-i-studying" class="section level3">
+<h3>When was I studying?</h3>
+<p>I studied at approximately the same times each day.
+I am very much a morning person and tend to do my best work after waking up and before lunch.
+Usually I would wake up around 6:00 and video chat with my girlfriend and then study if I did not have school.</p>
+<p>To create this plot I create a sequence of times for each day, with 10 minutes spacing.
+Then for each of these times I compute how many time intervals it falls into (summing all the indicator functions).
+This is like manually computing a histogram with taking into account that the data are intervals.</p>
+<pre class="r"><code>time_seq &lt;- function(dates, entries, by = &quot;1 min&quot;) {
+  ds &lt;- seq(dates[1], dates[1] + days(1), by = by)
+  res &lt;- NULL
+  # Alternatively could use group_by, group_walk/group_map
+  for(i in seq_along(dates)) {
+    d &lt;- dates[i]
+    # Set the date. This prevents the sequences from having different lengths due to leap
+    date(ds) &lt;- d
+    d_entries &lt;- filter(entries, date == d)
+    # Compute overlap of time entries for one date
+    r &lt;- unlist(lapply(ds, function(td) {
+      sum(td &gt;= d_entries$start &amp; td &lt;= d_entries$stop)
+    }))
+    # Add to the result
+    if(is.null(res)) res &lt;- r
+    else res &lt;- res + r
+  }
+  list(count = res,
+       date = ds)
+}
+
+ti &lt;- 10
+time_df &lt;- data.frame(
+  time_seq(dates = unique(floor_date(time_entries$start, unit = &quot;day&quot;)),
+           time_entries,
+           by = paste(ti, &quot;min&quot;)))</code></pre>
+<pre class="r"><code>ggplot(time_df) +
+  geom_bar(aes(x = date, y = count), stat = &quot;identity&quot;, width = ti * 60) +
+  scale_x_datetime(breaks = &quot;3 hour&quot;, labels=date_format(&quot;%H:%M&quot;)) +
+  ylab(&quot;count&quot;) +
+  xlab(&quot;time&quot;)</code></pre>
+<p><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-11-1.png" width="768" /></p>
+<p>I did most of my studying around 9:00 and 13:00.
+It seems as if this is a Gaussian mixture of four normal distributions centered at 6:00, 9:00, 13:00 and 18:30.
+Unlike most students, I hardly did any studying in the evening or at night.</p>
+</div>
+<div id="distribution-of-event-time" class="section level3">
+<h3>Distribution of event time</h3>
+<p>What was the distribution of the time for each study period?
+As I mentioned in the introduction, I worked in 25 minute blocks for most of the time.
+Somewhat frequently I would get distracted and stop the time early leading to many events shorter than 25 minutes.
+It is easy to the effect on the number of events close to 25 minutes.
+The large outliers came from some of the projects that I had to do.
+I find the Pomodoro Technique works really well when studying math or statistics theory but not as well for programming or data analysis.
+It seems from the histogram that the data could be exponential or some power law mixed with a point mass around 25 minutes.
+This is kind of like a zero inflated Poisson model, except something like a 25-inflated Poisson model.</p>
+<pre class="r"><code>ggplot(data.frame(minutes = time_entries$duration / 60)) +
+  geom_histogram(aes(x = minutes), bins = 50)</code></pre>
+<p><img src="/post/2020-06-19-hours-spent-masters-degree-toggl_files/figure-html/unnamed-chunk-12-1.png" width="480" /></p>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>Overall it was quite interesting to look at how I studied during my Master’s degree.
+I still keep track of the time I spend on my activities.
+Next up I want to link this to some of my other personal data such as rock climbing frequency, running and weight.
+Other sources that I could join together are weather data and sunrise/sunset data.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+</div>
+<div id="reproducibility" class="section level2">
+<h2>Reproducibility</h2>
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────────────────────────────────────────────
+ setting  value                       
+ version  R version 3.6.3 (2020-02-29)
+ os       macOS Mojave 10.14.6        
+ system   x86_64, darwin15.6.0        
+ ui       X11                         
+ language (EN)                        
+ collate  en_US.UTF-8                 
+ ctype    en_US.UTF-8                 
+ tz       Europe/Stockholm            
+ date     2020-06-19                  
+
+─ Packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+ package       * version  date       lib source                             
+ assertthat      0.2.1    2019-03-21 [1] CRAN (R 3.6.0)                     
+ bibtex          0.4.2    2017-06-30 [1] CRAN (R 3.6.0)                     
+ blogdown        0.13     2019-06-11 [1] CRAN (R 3.6.0)                     
+ bookdown        0.11     2019-05-28 [1] CRAN (R 3.6.0)                     
+ cli             2.0.2    2020-02-28 [1] CRAN (R 3.6.0)                     
+ cluster         2.1.0    2019-06-19 [1] CRAN (R 3.6.3)                     
+ codetools       0.2-16   2018-12-24 [1] CRAN (R 3.6.3)                     
+ colorspace      1.4-1    2019-03-18 [1] CRAN (R 3.6.0)                     
+ crayon          1.3.4    2017-09-16 [1] CRAN (R 3.6.0)                     
+ curl            4.3      2019-12-02 [1] CRAN (R 3.6.0)                     
+ digest          0.6.25   2020-02-23 [1] CRAN (R 3.6.0)                     
+ dplyr         * 0.8.5    2020-03-07 [1] CRAN (R 3.6.0)                     
+ ellipsis        0.3.0    2019-09-20 [1] CRAN (R 3.6.0)                     
+ evaluate        0.14     2019-05-28 [1] CRAN (R 3.6.0)                     
+ fansi           0.4.1    2020-01-08 [1] CRAN (R 3.6.0)                     
+ farver          2.0.3    2020-01-16 [1] CRAN (R 3.6.0)                     
+ getPass         0.2-2    2017-07-21 [1] CRAN (R 3.6.0)                     
+ ggplot2       * 3.3.1    2020-05-28 [1] CRAN (R 3.6.2)                     
+ glue            1.4.1    2020-05-13 [1] CRAN (R 3.6.2)                     
+ gtable          0.3.0    2019-03-25 [1] CRAN (R 3.6.0)                     
+ hexbin          1.27.3   2019-05-14 [1] CRAN (R 3.6.0)                     
+ highr           0.8      2019-03-20 [1] CRAN (R 3.6.0)                     
+ hms             0.5.3    2020-01-08 [1] CRAN (R 3.6.0)                     
+ htmltools       0.4.0    2019-10-04 [1] CRAN (R 3.6.0)                     
+ httr            1.4.1    2019-08-05 [1] CRAN (R 3.6.0)                     
+ jsonlite        1.6.1    2020-02-02 [1] CRAN (R 3.6.0)                     
+ keyring         1.1.0    2018-07-16 [1] CRAN (R 3.6.0)                     
+ knitcitations * 1.0.8    2017-07-04 [1] CRAN (R 3.6.0)                     
+ knitr         * 1.28     2020-02-06 [1] CRAN (R 3.6.0)                     
+ labeling        0.3      2014-08-23 [1] CRAN (R 3.6.0)                     
+ lattice         0.20-38  2018-11-04 [1] CRAN (R 3.6.3)                     
+ latticeExtra    0.6-28   2016-02-09 [1] CRAN (R 3.6.0)                     
+ lifecycle       0.2.0    2020-03-06 [1] CRAN (R 3.6.0)                     
+ lubridate     * 1.7.4    2018-04-11 [1] CRAN (R 3.6.0)                     
+ magrittr        1.5      2014-11-22 [1] CRAN (R 3.6.0)                     
+ mapproj         1.2.7    2020-02-03 [1] CRAN (R 3.6.0)                     
+ maps            3.3.0    2018-04-03 [1] CRAN (R 3.6.0)                     
+ MASS            7.3-51.5 2019-12-20 [1] CRAN (R 3.6.3)                     
+ Matrix          1.2-18   2019-11-27 [1] CRAN (R 3.6.3)                     
+ mgcv            1.8-31   2019-11-09 [1] CRAN (R 3.6.3)                     
+ munsell         0.5.0    2018-06-12 [1] CRAN (R 3.6.0)                     
+ nlme            3.1-144  2020-02-06 [1] CRAN (R 3.6.3)                     
+ openair         2.7-2    2020-04-02 [1] CRAN (R 3.6.2)                     
+ parsedate       1.2.0    2019-05-08 [1] CRAN (R 3.6.0)                     
+ pillar          1.4.3    2019-12-20 [1] CRAN (R 3.6.0)                     
+ pkgconfig       2.0.3    2019-09-22 [1] CRAN (R 3.6.0)                     
+ plyr            1.8.6    2020-03-03 [1] CRAN (R 3.6.0)                     
+ prettyunits     1.1.1    2020-01-24 [1] CRAN (R 3.6.0)                     
+ purrr           0.3.3    2019-10-18 [1] CRAN (R 3.6.0)                     
+ R6              2.4.1    2019-11-12 [1] CRAN (R 3.6.0)                     
+ RColorBrewer    1.1-2    2014-12-07 [1] CRAN (R 3.6.0)                     
+ Rcpp            1.0.3    2019-11-08 [1] CRAN (R 3.6.0)                     
+ readr           1.3.1    2018-12-21 [1] CRAN (R 3.6.0)                     
+ RefManageR      1.2.12   2019-04-03 [1] CRAN (R 3.6.0)                     
+ rematch2        2.0.1    2017-06-20 [1] CRAN (R 3.6.0)                     
+ rlang           0.4.5    2020-03-01 [1] CRAN (R 3.6.0)                     
+ rmarkdown       2.1      2020-01-20 [1] CRAN (R 3.6.0)                     
+ rstudioapi      0.11     2020-02-07 [1] CRAN (R 3.6.0)                     
+ scales        * 1.1.0    2019-11-18 [1] CRAN (R 3.6.0)                     
+ sessioninfo   * 1.1.1    2018-11-05 [1] CRAN (R 3.6.0)                     
+ stringi         1.4.6    2020-02-17 [1] CRAN (R 3.6.0)                     
+ stringr         1.4.0    2019-02-10 [1] CRAN (R 3.6.0)                     
+ tibble          2.1.3    2019-06-06 [1] CRAN (R 3.6.0)                     
+ tidyr         * 1.0.2    2020-01-24 [1] CRAN (R 3.6.0)                     
+ tidyselect      1.0.0    2020-01-27 [1] CRAN (R 3.6.0)                     
+ togglr        * 0.1.34   2020-06-12 [1] Github (ThinkR-open/togglr@ea3afde)
+ vctrs           0.2.4    2020-03-10 [1] CRAN (R 3.6.0)                     
+ withr           2.1.2    2018-03-15 [1] CRAN (R 3.6.0)                     
+ xfun            0.12     2020-01-13 [1] CRAN (R 3.6.0)                     
+ xml2            1.2.5    2020-03-11 [1] CRAN (R 3.6.0)                     
+ yaml            2.2.1    2020-02-01 [1] CRAN (R 3.6.0)                     
+
+[1] /Library/Frameworks/R.framework/Versions/3.6/Resources/library</code></pre>
+</div>

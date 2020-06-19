@@ -1,0 +1,284 @@
+---
+draft: true
+title: Weight analysis
+author: Stefan Eng
+date: '2020-06-19'
+slug: weight-analysis
+categories:
+  - statistics
+tags:
+  - personal-data
+  - R
+  - time-series
+output:
+  blogdown::html_page:
+    toc: no
+    fig_width: 5
+    fig_height: 5
+link-citations: yes
+csl: ../../static/bibtex/acm-sig-proceedings.csl
+bibliography: ../../static/bibtex/probability.bib
+---
+
+
+
+<pre class="r"><code>library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(here)
+library(tidyr)
+library(forecast)</code></pre>
+<div id="daylight" class="section level3">
+<h3>Daylight</h3>
+<pre class="r"><code>time_entries &lt;- readRDS(here(&#39;data/gu_toggl_entries.Rds&#39;))
+daily_entries &lt;- readRDS(here(&#39;data/gu_toggl_daily_entries.Rds&#39;))
+
+sunrise &lt;- readRDS(here(&#39;data/gbg_sunrise.Rds&#39;))
+sunrise$date_str &lt;- format(sunrise$date, &quot;%Y-%m-%d&quot;)
+
+date_totals &lt;- time_entries %&gt;%
+  group_by(date_str) %&gt;%
+  summarize(total_seconds = sum(duration),
+            total_hours = sum(duration) / 3600)
+
+hours_day_length &lt;- left_join(date_totals, sunrise, by = &quot;date_str&quot;) %&gt;%
+  mutate(day_length_num = as.numeric(day_length) / 3600) %&gt;%
+  select(date, total_hours, day_length_num)
+
+plot(hours_day_length$day_length_num, hours_day_length$total_hours)</code></pre>
+<p><img src="/post/2020-06-19-weight-analysis_files/figure-html/unnamed-chunk-2-1.png" width="480" /></p>
+<pre class="r"><code>summary(lm(total_hours ~ day_length_num, data = hours_day_length))</code></pre>
+<pre><code>
+Call:
+lm(formula = total_hours ~ day_length_num, data = hours_day_length)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-2.495 -1.383 -0.230  1.106  7.483 
+
+Coefficients:
+               Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)     2.34796    0.28051   8.370 8.89e-16 ***
+day_length_num  0.01417    0.02399   0.591    0.555    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 1.72 on 415 degrees of freedom
+Multiple R-squared:  0.0008399, Adjusted R-squared:  -0.001568 
+F-statistic: 0.3488 on 1 and 415 DF,  p-value: 0.5551</code></pre>
+</div>
+<div id="weight" class="section level3">
+<h3>Weight</h3>
+<pre class="r"><code>library(googlesheets4)
+weight &lt;- read_sheet(&quot;https://docs.google.com/spreadsheets/d/1IqslSB8wSBfdAF3YtkX7fRZ0uTeeywqbEhKWkndCw2A/edit#gid=0&quot;)</code></pre>
+<pre class="r"><code>running_date &lt;- date(&quot;2019-10-7&quot;)
+
+day_order &lt;- c(&quot;Monday&quot;, &quot;Tuesday&quot;, &quot;Wednesday&quot;, &quot;Thursday&quot;,&quot;Friday&quot;, &quot;Saturday&quot;, &quot;Sunday&quot;)
+day_order_abbr &lt;- c(&quot;Mon&quot;, &quot;Tue&quot;, &quot;Wed&quot;, &quot;Thu&quot;, &quot;Fri&quot;, &quot;Sat&quot;, &quot;Sun&quot;)
+
+dates_seq &lt;- seq(min(weight$date), max(weight$date), by = &quot;day&quot;)
+  
+empty_lbs &lt;- is.na(weight$`weight lbs`) &amp; !is.na(weight$`weight kg`)
+weight[empty_lbs, &quot;weight lbs&quot;] &lt;- weight$`weight kg`[empty_lbs] * 2.20462
+
+empty_kg &lt;- !is.na(weight$`weight lbs`) &amp; is.na(weight$`weight kg`)
+weight[empty_kg, &quot;weight kg&quot;] &lt;- weight$`weight lbs`[empty_kg] / 2.20462
+
+weight$date_str &lt;- format(weight$date, &quot;%Y-%m-%d&quot;)
+
+# Include the days that I did not weigh myself
+filled_weight &lt;- left_join(
+  data.frame(date = as.POSIXct.Date(dates_seq), date_str = format(dates_seq, &quot;%Y-%m-%d&quot;), stringsAsFactors = FALSE),
+  weight,
+  by = &quot;date_str&quot;
+)
+
+weight_joined &lt;- full_join(filled_weight, sunrise, by = &quot;date_str&quot;) %&gt;%
+  full_join(date_totals, by = &quot;date_str&quot;) %&gt;%
+  mutate(day_length_num = as.numeric(day_length) / 3600,
+         weekday = factor(weekdays(date, abbreviate = T), levels = day_order_abbr)) %&gt;%
+  rename(weight_kg = `weight kg`) %&gt;%
+  select(date, weekday, total_hours, day_length_num, weight_kg) %&gt;%
+  replace_na(list(total_hours = 0)) %&gt;%
+  filter(date &lt; today())
+
+lin_approx &lt;- approxfun(weight_joined$date, weight_joined$weight_kg)
+
+weight_joined$weight_kg_lin &lt;- lin_approx(weight_joined$date)
+# Moving averages for month and week on the linearly interpolated dataset
+weight_joined$moving_avg7 &lt;- ma(weight_joined$weight_kg_lin, 7)
+weight_joined$moving_avg30 &lt;- ma(weight_joined$weight_kg_lin, 30)
+
+df_sweden &lt;- filter(weight_joined, date &gt; date(&quot;2019-09-01&quot;))
+
+# Much better range is from 2019-9-2 to today
+
+# Dumb model
+fit_arima &lt;- auto.arima(weight_joined$weight_kg_lin)
+
+ggplot(weight_joined) +
+  geom_point(aes(x = date, y = weight_kg)) +
+  geom_line(aes(x = date, y = weight_kg_lin)) +
+  geom_line(aes(x = date, y = moving_avg7, color = &quot;ma7&quot;), size = 1) +
+  geom_line(aes(x = date, y = moving_avg30, color = &quot;ma30&quot;), size = 1)</code></pre>
+<p><img src="/post/2020-06-19-weight-analysis_files/figure-html/unnamed-chunk-4-1.png" width="480" /></p>
+<pre class="r"><code>fit_arima_filt &lt;- auto.arima(df_sweden$weight_kg_lin)
+fit_ets_filt &lt;- ets(df_sweden$weight_kg_lin)
+
+df_sweden$moving_avg7 &lt;- ma(df_sweden$weight_kg_lin, 7)
+df_sweden$moving_avg30 &lt;- ma(df_sweden$weight_kg_lin, 30)
+
+boxplot(weight_kg_lin - moving_avg7 ~ weekday, data = df_sweden)
+points(jitter(as.integer(df_sweden$weekday),0.5) , df_sweden$weight_kg_lin - df_sweden$moving_avg7 , pch = 21, cex = 0.7, bg = &quot;white&quot;, col = &quot;black&quot; )</code></pre>
+<p><img src="/post/2020-06-19-weight-analysis_files/figure-html/unnamed-chunk-5-1.png" width="480" /></p>
+<pre class="r"><code>summary(lm(weight_kg_lin - moving_avg7 ~ 0 + weekday, data = df_sweden))</code></pre>
+<pre><code>
+Call:
+lm(formula = weight_kg_lin - moving_avg7 ~ 0 + weekday, data = df_sweden)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.28539 -0.34243  0.01561  0.31011  1.69583 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)  
+weekdayMon -0.001322   0.079906  -0.017   0.9868  
+weekdayTue -0.062462   0.080898  -0.772   0.4407  
+weekdayWed -0.114720   0.080898  -1.418   0.1573  
+weekdayThu -0.095828   0.079906  -1.199   0.2314  
+weekdayFri  0.155472   0.079906   1.946   0.0527 .
+weekdaySat  0.126817   0.079906   1.587   0.1136  
+weekdaySun -0.005310   0.079906  -0.066   0.9471  
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.5116 on 278 degrees of freedom
+  (6 observations deleted due to missingness)
+Multiple R-squared:  0.03591,   Adjusted R-squared:  0.01163 
+F-statistic: 1.479 on 7 and 278 DF,  p-value: 0.1745</code></pre>
+<pre class="r"><code>summary(fit_arima_filt)</code></pre>
+<pre><code>Series: df_sweden$weight_kg_lin 
+ARIMA(0,1,2) 
+
+Coefficients:
+          ma1      ma2
+      -0.4858  -0.2099
+s.e.   0.0592   0.0622
+
+sigma^2 estimated as 0.4159:  log likelihood=-283.57
+AIC=573.13   AICc=573.21   BIC=584.14
+
+Training set error measures:
+                      ME      RMSE       MAE         MPE     MAPE      MASE
+Training set -0.01651186 0.6415979 0.4894455 -0.02502576 0.589215 0.9484003
+                     ACF1
+Training set -0.001059104</code></pre>
+<pre class="r"><code>summary(fit_ets_filt)</code></pre>
+<pre><code>ETS(A,N,N) 
+
+Call:
+ ets(y = df_sweden$weight_kg_lin) 
+
+  Smoothing parameters:
+    alpha = 0.4082 
+
+  Initial states:
+    l = 83.4279 
+
+  sigma:  0.6566
+
+     AIC     AICc      BIC 
+1410.064 1410.148 1421.084 
+
+Training set error measures:
+                      ME      RMSE       MAE         MPE      MAPE      MASE
+Training set -0.01347262 0.6543061 0.4969391 -0.02123882 0.5980471 0.9629207
+                  ACF1
+Training set 0.1093745</code></pre>
+<pre class="r"><code>ggplot(df_sweden) +
+  geom_point(aes(x = date, y = weight_kg)) +
+  geom_line(aes(x = date, y = weight_kg_lin)) +
+  geom_line(aes(x = date, y = moving_avg7, color = &quot;ma7&quot;), size = 1) +
+  geom_line(aes(x = date, y = moving_avg30, color = &quot;ma30&quot;), size = 1)</code></pre>
+<p><img src="/post/2020-06-19-weight-analysis_files/figure-html/unnamed-chunk-5-2.png" width="480" /></p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+</div>
+<div id="reproducibility" class="section level2">
+<h2>Reproducibility</h2>
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────────────────────────────────────────────
+ setting  value                       
+ version  R version 3.6.3 (2020-02-29)
+ os       macOS Mojave 10.14.6        
+ system   x86_64, darwin15.6.0        
+ ui       X11                         
+ language (EN)                        
+ collate  en_US.UTF-8                 
+ ctype    en_US.UTF-8                 
+ tz       Europe/Stockholm            
+ date     2020-06-19                  
+
+─ Packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+ package     * version  date       lib source        
+ assertthat    0.2.1    2019-03-21 [1] CRAN (R 3.6.0)
+ backports     1.1.5    2019-10-02 [1] CRAN (R 3.6.0)
+ blogdown      0.13     2019-06-11 [1] CRAN (R 3.6.0)
+ bookdown      0.11     2019-05-28 [1] CRAN (R 3.6.0)
+ cli           2.0.2    2020-02-28 [1] CRAN (R 3.6.0)
+ colorspace    1.4-1    2019-03-18 [1] CRAN (R 3.6.0)
+ crayon        1.3.4    2017-09-16 [1] CRAN (R 3.6.0)
+ curl          4.3      2019-12-02 [1] CRAN (R 3.6.0)
+ digest        0.6.25   2020-02-23 [1] CRAN (R 3.6.0)
+ dplyr       * 0.8.5    2020-03-07 [1] CRAN (R 3.6.0)
+ ellipsis      0.3.0    2019-09-20 [1] CRAN (R 3.6.0)
+ evaluate      0.14     2019-05-28 [1] CRAN (R 3.6.0)
+ fansi         0.4.1    2020-01-08 [1] CRAN (R 3.6.0)
+ farver        2.0.3    2020-01-16 [1] CRAN (R 3.6.0)
+ forecast    * 8.7      2019-04-29 [1] CRAN (R 3.6.0)
+ fracdiff      1.4-2    2012-12-02 [1] CRAN (R 3.6.0)
+ ggplot2     * 3.3.1    2020-05-28 [1] CRAN (R 3.6.2)
+ glue          1.4.1    2020-05-13 [1] CRAN (R 3.6.2)
+ gtable        0.3.0    2019-03-25 [1] CRAN (R 3.6.0)
+ here        * 0.1      2017-05-28 [1] CRAN (R 3.6.0)
+ htmltools     0.4.0    2019-10-04 [1] CRAN (R 3.6.0)
+ knitr         1.28     2020-02-06 [1] CRAN (R 3.6.0)
+ labeling      0.3      2014-08-23 [1] CRAN (R 3.6.0)
+ lattice       0.20-38  2018-11-04 [1] CRAN (R 3.6.3)
+ lifecycle     0.2.0    2020-03-06 [1] CRAN (R 3.6.0)
+ lmtest        0.9-37   2019-04-30 [1] CRAN (R 3.6.0)
+ lubridate   * 1.7.4    2018-04-11 [1] CRAN (R 3.6.0)
+ magrittr      1.5      2014-11-22 [1] CRAN (R 3.6.0)
+ munsell       0.5.0    2018-06-12 [1] CRAN (R 3.6.0)
+ nlme          3.1-144  2020-02-06 [1] CRAN (R 3.6.3)
+ nnet          7.3-12   2016-02-02 [1] CRAN (R 3.6.3)
+ pillar        1.4.3    2019-12-20 [1] CRAN (R 3.6.0)
+ pkgconfig     2.0.3    2019-09-22 [1] CRAN (R 3.6.0)
+ purrr         0.3.3    2019-10-18 [1] CRAN (R 3.6.0)
+ quadprog      1.5-6    2019-04-07 [1] CRAN (R 3.6.0)
+ quantmod      0.4-15   2019-06-17 [1] CRAN (R 3.6.0)
+ R6            2.4.1    2019-11-12 [1] CRAN (R 3.6.0)
+ Rcpp          1.0.3    2019-11-08 [1] CRAN (R 3.6.0)
+ rlang         0.4.5    2020-03-01 [1] CRAN (R 3.6.0)
+ rmarkdown     2.1      2020-01-20 [1] CRAN (R 3.6.0)
+ rprojroot     1.3-2    2018-01-03 [1] CRAN (R 3.6.0)
+ scales        1.1.0    2019-11-18 [1] CRAN (R 3.6.0)
+ sessioninfo * 1.1.1    2018-11-05 [1] CRAN (R 3.6.0)
+ stringi       1.4.6    2020-02-17 [1] CRAN (R 3.6.0)
+ stringr       1.4.0    2019-02-10 [1] CRAN (R 3.6.0)
+ tibble        2.1.3    2019-06-06 [1] CRAN (R 3.6.0)
+ tidyr       * 1.0.2    2020-01-24 [1] CRAN (R 3.6.0)
+ tidyselect    1.0.0    2020-01-27 [1] CRAN (R 3.6.0)
+ timeDate      3043.102 2018-02-21 [1] CRAN (R 3.6.0)
+ tseries       0.10-47  2019-06-05 [1] CRAN (R 3.6.0)
+ TTR           0.23-4   2018-09-20 [1] CRAN (R 3.6.0)
+ urca          1.3-0    2016-09-06 [1] CRAN (R 3.6.0)
+ vctrs         0.2.4    2020-03-10 [1] CRAN (R 3.6.0)
+ withr         2.1.2    2018-03-15 [1] CRAN (R 3.6.0)
+ xfun          0.12     2020-01-13 [1] CRAN (R 3.6.0)
+ xts           0.11-2   2018-11-05 [1] CRAN (R 3.6.0)
+ yaml          2.2.1    2020-02-01 [1] CRAN (R 3.6.0)
+ zoo           1.8-6    2019-05-28 [1] CRAN (R 3.6.0)
+
+[1] /Library/Frameworks/R.framework/Versions/3.6/Resources/library</code></pre>
+</div>

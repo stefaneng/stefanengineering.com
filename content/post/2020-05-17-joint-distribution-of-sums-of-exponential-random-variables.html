@@ -13,12 +13,14 @@ output:
     toc: no
     fig_width: 5
     fig_height: 5
+link-citations: true    
 csl: ../../static/bibtex/acm-sig-proceedings.csl
+bibliography: ../../static/bibtex/probability.bib
 ---
 
 
 
-<p>This is a problem from Ross’s Stochastic Processes.
+<p>This is a problem from Ross’s Stochastic Processes <span class="citation">[<a href="#ref-ross1996stochastic">1</a>]</span>.
 Let
 <span class="math display">\[
 \begin{aligned}
@@ -72,8 +74,16 @@ rate &lt;- 1
 sim_res &lt;- replicate(1000, sim(t1, t2, t3, rate))
 
 cat(&quot;Simulated mean:&quot;, round(mean(sim_res), 3))</code></pre>
-<pre><code>Simulated mean: 0.421</code></pre>
+<pre><code>Simulated mean: 0.422</code></pre>
 <pre class="r"><code>cat(&quot;Expected joint distribution:&quot;, round(expect_joint(t1, t2, t3, rate), 3))</code></pre>
 <pre><code>Expected joint distribution: 0.422</code></pre>
 <p>```</p>
+</div>
+<div id="references" class="section level3 unnumbered">
+<h3>References</h3>
+<div id="refs" class="references">
+<div id="ref-ross1996stochastic">
+<p>[1] Ross, S.M. et al. 1996. <em>Stochastic processes</em>. Wiley New York.</p>
+</div>
+</div>
 </div>

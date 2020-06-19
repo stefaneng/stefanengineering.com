@@ -1,8 +1,7 @@
 ---
-draft: true
-title: Analysis of hours spent on Master's degree from toggl
+title: Analysis of hours spent on Master's degree
 author: Stefan Eng
-date: '2020-06-12'
+date: '2020-06-19'
 slug: hours-spent-masters-degree-toggl
 categories:
   - statistics
@@ -24,16 +23,6 @@ csl: ../../static/bibtex/acm-sig-proceedings.csl
 ## Load frequently used packages for blog posts
 library(knitcitations) # for citations
 library(sessioninfo) # for session_info()
-# library(ggplot2)
-# library(httr)
-# library(togglr)
-# library(lubridate)
-# library(tibble)
-# library(dplyr)
-# library(tidyr)
-# library(here)
-# library(forecast)
-# library(purrr)
 
 ## For R images to display well in the RSS feed (disable for local preview)
 # knitr::opts_knit$set(base.url = 'stefanengineering.com/post/')
@@ -58,8 +47,11 @@ bib <- list(
 
 In this post I will show how to analyze data from [toggl](https://toggl.com) to visualzation the time that I spent on my Master's degree.
 I studied mathematical statistics at Gothenburg University from September 2018 to June 2020.
-I kept track of my hours using [toggl](https://toggl.com/). Unfortunately I did not keep track of the time spent at my lectures as I thought I could pull the data from a calendar later. So all of the time estimates are based on my outside of class studying. I generally study using the [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique) with a timer for 25 minutes. I would also stop the timer immediately if I checked my phone or got up for anything. This is clear from the data as there are lots of entries under 25 minutes. 
+I kept track of my hours using [toggl](https://toggl.com/). Unfortunately I did not keep track of the time spent at my lectures as I thought I could pull the data from a calendar later.
+So all of the time estimates are based on my outside of class studying. I generally study using the [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique) with a timer for 25 minutes. I would also stop the timer immediately if I checked my phone or got up for anything. This is clear from the data as there are lots of entries under 25 minutes. 
+We'll first go over extracting the data from toggl and then some visualizations.
 
+### Setup
 ```{r}
 library(togglr)
 library(tidyr)
@@ -68,12 +60,17 @@ library(dplyr)
 library(knitr)
 library(ggplot2)
 library(scales)
+library(knitr)
 ```
 
 ## Extracting Data from Toggl
 First we pull the data from toggl using the R package [togglr](https://github.com/ThinkR-open/togglr).
 I have each one of my courses as a separate project on toggl so first I create a tribble of the meta data for each course.
-The abbriviation 
+Each course is 50% time and taking two classes a quarter (four a semester) is full time.
+The abbriviation HT is Hösttermin which means fall semester and VT = Vårtermin which means spring semester.
+Each of the semesters are divided into two parts, 1 and 2.
+So an entire year consists of the reading periods HT1, HT2, VT1, VT2 spanning about 10 weeks.
+Now we will dive in to extracting and processing the data from toggl.
 
 ```{r, cache=T}
 courses <- tribble(
@@ -122,10 +119,12 @@ time_interval <- seq(start_day, last_day, length.out = seg)
 since = time_interval[-seg]
 until = time_interval[-1]
 
+# Use the toggl api to get the time entries
 time_entries_list <- lapply(2:seg, function(i) {
   togglr::get_time_entries(since = time_interval[i - 1], until = time_interval[i])
 })
 
+# Use rbind.fill to create columns if they do not exist
 toggl_df <- do.call(plyr::rbind.fill, time_entries_list) %>%
   dplyr::rename(course = project_name)
 
@@ -161,12 +160,21 @@ time_entries <- left_join(toggl_simple, schedule, by = "period_key") %>%
   distinct(start, stop, .keep_all = T) %>%
   mutate(date = format(start, "%Y-%m-%d"),
          weekday = factor(weekdays(start, abbreviate = T), levels = day_order_abbr))
+
 ```
+Now we have a nicely formatted data frame of the time entries for all my course entries.
+Next we want to summarize the total time by each day.
 
 ### Daily Totals
+The naïve way creating daily totals would be to just group by date.
+One issue with this approach is that it ignores the dates in which I didn't do any studying.
+I want any date that is in a quarter to be in the data set but with an `NA` or `0` for the daily total.
+We do this below by creating date sequences for each quarter.
+Then we join this to the original time entries to fill in the gaps of study days.
 ```{r}
 # All days in school
 md <- mapply(seq, from = int_start(schedule$int), to = int_end(schedule$int), by = 'day')
+
 # All the days in each semester with meta data
 md_meta <- lapply(seq_along(md), function(i) {
   cbind(
@@ -175,7 +183,7 @@ md_meta <- lapply(seq_along(md), function(i) {
                stringsAsFactors = FALSE),
     schedule[rep(i, length(md[[i]])),]
   )
-  })
+})
 
 school_days <- do.call("rbind", md_meta)
 
@@ -188,8 +196,9 @@ daily_entries <- time_entries %>%
   replace_na(list(total_hours = 0))
 ```
 
-## 
-
+## Basic summary statistics
+Now we can create a data frame with some basic summary statistics from the data.
+Don't worry about the content of these yet as we will be plotting them later. 
 ```{r}
 sum_stats <- time_entries %>%
   unite(quarter, semester, period, sep = "") %>%
@@ -217,15 +226,18 @@ thesis_cond <- sum_stats$course == "Thesis"
 sum_stats[thesis_cond, "cumsum"] <- cumsum(sum_stats[thesis_cond,"total_time_hours"])
 ```
 
-## Summary
-
-Time spent per year
+### Time spent per year
+I spent about 77 more hours in my second year than the first.
+It seems like that should be even higher but that was probably due to more work on personal projects.
+I didn't record those hours as rigorously as my course work entries but it would be interesting to look at those as well.
 ```{r}
 time_entries %>%
   group_by(study_year) %>%
   summarize(total_hours = sum(duration) / 3600) %>%
   kable(digits = 1, col.names = c("Study Year", "Total Hours"))
 ```
+
+## Visualizations
 
 First set some colors and theme
 ```{r}
@@ -241,8 +253,6 @@ theme_set(
     )
 )
 ```
-
-\@ref(fig:hours-per-course-quarter)
 
 ```{r hours-per-course-quarter, fig.cap="Total hours spent on each course by quarter", fig.width=8}
 # Per course
@@ -271,6 +281,14 @@ ggplot(sum_stats) +
   scale_fill_manual(values = cbPalette[-1])
 ```
 
+In Figure \@ref(fig:hours-per-course-year) we see the total hours that I spent on each course, colored by year.
+The second year courses were all math courses compared with the first year when I took all statistics courses.
+I took integration theory without any other courses and spent much more time than other courses.
+Similarly for functional analysis I focused essentially 100% of my time on it.
+Overall both of these ended up being more than double the time I would spent on a statistic course which was about 58 hours in median.
+Interestingly, I spent much less time on topology which is the other math course I took.
+This was due to the fact that I had to learn topology for functional analysis any way so it was much easier as a result.
+
 ```{r hours-per-course-year, fig.cap="Total hours spent on each course by year", fig.width=8}
 # Per course
 ggplot(sum_stats_course) +
@@ -298,8 +316,12 @@ ggplot(sum_stats_course) +
   scale_fill_manual(values = cbPalette[-1], name = "Year")
 ```
 
-By period
-```{r}
+Looking at the data by quarter was the most interesting for me.
+It is clear from this that I spent more time in every quarter during the second year.
+Also, the first quarter of spring is massively much less time than the other quarters.
+Especially the first year but the second year as well I had a really hard time adjusting to the swedish winters.
+
+```{r, fig.width=8}
 time_entries %>%
   group_by(study_year, semester, period) %>%
   summarize(hours = sum(duration)/3600) %>%
@@ -312,8 +334,6 @@ geom_bar(aes(x = quarter, y = hours, fill = as.factor(study_year)), position = "
   labs(title = "Hours per quarter",
        caption = "stefanengineering.com")
 ```
-
-
 
 ### Calendar
 Using `calendarPlot` from the `openair` package we can display the number of hours per day on a calendar.
@@ -338,6 +358,8 @@ daily_entries %>%
 
 ### Study streaks
 After looking at the calendar graphs I wanted to see what the longest streaks I had for studying and for breaks.
+I never tried to keep a streak alive at any point but I did end up with quite a few long ones.
+My longest streak was 32 days of work and my longest break was 11 days when I went home for Easter break.
 ```{r}
 run_df <- daily_entries %>%
   mutate(studied = total_hours > 0) %>%
@@ -386,6 +408,13 @@ toprun_df %>%
 ```
 
 ### When was I studying?
+I studied at approximately the same times each day.
+I am very much a morning person and tend to do my best work after waking up and before lunch.
+Usually I would wake up around 6:00 and video chat with my girlfriend and then study if I did not have school.
+
+To create this plot I create a sequence of times for each day, with 10 minutes spacing.
+Then for each of these times I compute how many time intervals it falls into (summing all the indicator functions).
+This is like manually computing a histogram with taking into account that the data are intervals.
 ```{r, cache=T}
 time_seq <- function(dates, entries, by = "1 min") {
   ds <- seq(dates[1], dates[1] + days(1), by = by)
@@ -408,11 +437,14 @@ time_seq <- function(dates, entries, by = "1 min") {
        date = ds)
 }
 
-#time_df <- data.frame(time_seq(unique(time_entries$date), time_entries))
-#time_df5 <- data.frame(time_seq(unique(time_entries$date), time_entries, by = "5 min"))
 ti <- 10
-time_df <- data.frame(time_seq(unique(floor_date(time_entries$start, unit = "day")), time_entries, by = paste(ti, "min")))
+time_df <- data.frame(
+  time_seq(dates = unique(floor_date(time_entries$start, unit = "day")),
+           time_entries,
+           by = paste(ti, "min")))
+```
 
+```{r, fig.width=8}
 ggplot(time_df) +
   geom_bar(aes(x = date, y = count), stat = "identity", width = ti * 60) +
   scale_x_datetime(breaks = "3 hour", labels=date_format("%H:%M")) +
@@ -420,12 +452,29 @@ ggplot(time_df) +
   xlab("time")
 ```
 
+I did most of my studying around 9:00 and 13:00.
+It seems as if this is a Gaussian mixture of four normal distributions centered at 6:00, 9:00, 13:00 and 18:30.
+Unlike most students, I hardly did any studying in the evening or at night.
 
+### Distribution of event time
+What was the distribution of the time for each study period?
+As I mentioned in the introduction, I worked in 25 minute blocks for most of the time.
+Somewhat frequently I would get distracted and stop the time early leading to many events shorter than 25 minutes.
 It is easy to the effect on the number of events close to 25 minutes. 
+The large outliers came from some of the projects that I had to do.
+I find the Pomodoro Technique works really well when studying math or statistics theory but not as well for programming or data analysis.
+It seems from the histogram that the data could be exponential or some power law mixed with a point mass around 25 minutes.
+This is kind of like a zero inflated Poisson model, except something like a 25-inflated Poisson model.
 ```{r}
 ggplot(data.frame(minutes = time_entries$duration / 60)) +
   geom_histogram(aes(x = minutes), bins = 50)
 ```
+
+## Conclusion
+Overall it was quite interesting to look at how I studied during my Master's degree.
+I still keep track of the time I spend on my activities.
+Next up I want to link this to some of my other personal data such as rock climbing frequency, running and weight.
+Other sources that I could join together are weather data and sunrise/sunset data.
 
 ## References
 

@@ -54,6 +54,8 @@ library(forecast)
 
 ```{r}
 time_entries <- readRDS(here('data/gu_toggl_entries.Rds'))
+daily_entries <- readRDS(here('data/gu_toggl_daily_entries.Rds'))
+
 sunrise <- readRDS(here('data/gbg_sunrise.Rds'))
 sunrise$date_str <- format(sunrise$date, "%Y-%m-%d")
 

@@ -30,10 +30,10 @@ library(tidyr)
 library(forecast)</code></pre>
 <div id="daylight" class="section level3">
 <h3>Daylight</h3>
-<pre class="r"><code>time_entries &lt;- readRDS(here(&#39;data/gu_toggl_entries.Rds&#39;))
-daily_entries &lt;- readRDS(here(&#39;data/gu_toggl_daily_entries.Rds&#39;))
+<pre class="r"><code>time_entries &lt;- readRDS(here(&#39;my_data/gu_toggl_entries.Rds&#39;))
+daily_entries &lt;- readRDS(here(&#39;my_data/gu_toggl_daily_entries.Rds&#39;))
 
-sunrise &lt;- readRDS(here(&#39;data/gbg_sunrise.Rds&#39;))
+sunrise &lt;- readRDS(here(&#39;my_data/gbg_sunrise.Rds&#39;))
 sunrise$date_str &lt;- format(sunrise$date, &quot;%Y-%m-%d&quot;)
 
 date_totals &lt;- time_entries %&gt;%
